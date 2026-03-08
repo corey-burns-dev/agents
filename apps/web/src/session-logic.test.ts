@@ -134,6 +134,35 @@ describe("derivePendingApprovals", () => {
 
     expect(derivePendingApprovals(activities)).toEqual([]);
   });
+
+  it("clears stale pending approvals when provider reports unknown pending approval", () => {
+    const activities: OrchestrationThreadActivity[] = [
+      makeActivity({
+        id: "approval-open-stale-alt",
+        createdAt: "2026-02-23T00:00:01.000Z",
+        kind: "approval.requested",
+        summary: "Command approval requested",
+        tone: "approval",
+        payload: {
+          requestId: "req-stale-approval-1",
+          requestKind: "command",
+        },
+      }),
+      makeActivity({
+        id: "approval-failed-stale-alt",
+        createdAt: "2026-02-23T00:00:02.000Z",
+        kind: "provider.approval.respond.failed",
+        summary: "Provider approval response failed",
+        tone: "error",
+        payload: {
+          requestId: "req-stale-approval-1",
+          detail: "Unknown pending approval request: req-stale-approval-1",
+        },
+      }),
+    ];
+
+    expect(derivePendingApprovals(activities)).toEqual([]);
+  });
 });
 
 describe("derivePendingUserInputs", () => {
@@ -219,6 +248,47 @@ describe("derivePendingUserInputs", () => {
         ],
       },
     ]);
+  });
+
+  it("clears stale structured prompts when provider reports unknown pending user input", () => {
+    const activities: OrchestrationThreadActivity[] = [
+      makeActivity({
+        id: "user-input-open-stale",
+        createdAt: "2026-02-23T00:00:01.000Z",
+        kind: "user-input.requested",
+        summary: "User input requested",
+        tone: "info",
+        payload: {
+          requestId: "req-user-input-stale-1",
+          questions: [
+            {
+              id: "approval",
+              header: "Approval",
+              question: "Continue?",
+              options: [
+                {
+                  label: "yes",
+                  description: "Continue execution",
+                },
+              ],
+            },
+          ],
+        },
+      }),
+      makeActivity({
+        id: "user-input-failed-stale",
+        createdAt: "2026-02-23T00:00:02.000Z",
+        kind: "provider.user-input.respond.failed",
+        summary: "Provider user input response failed",
+        tone: "error",
+        payload: {
+          requestId: "req-user-input-stale-1",
+          detail: "Unknown pending user input request: req-user-input-stale-1",
+        },
+      }),
+    ];
+
+    expect(derivePendingUserInputs(activities)).toEqual([]);
   });
 });
 

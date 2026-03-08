@@ -15,6 +15,13 @@ const decodeWsResponseFromJson = Schema.decodeUnknownExit(Schema.fromJsonString(
 const isWsPushEnvelope = Schema.is(WsPush);
 const isWebSocketResponseEnvelope = Schema.is(WebSocketResponse);
 
+export function resolveDefaultWebSocketUrl(): string {
+  const currentUrl = new URL(window.location.href);
+  currentUrl.protocol = currentUrl.protocol === "https:" ? "wss:" : "ws:";
+  currentUrl.hash = "";
+  return currentUrl.toString();
+}
+
 interface WsRequestEnvelope {
   id: string;
   body: {
@@ -44,7 +51,7 @@ export class WsTransport {
         ? bridgeUrl
         : envUrl && envUrl.length > 0
           ? envUrl
-          : `ws://${window.location.hostname}:${window.location.port}`);
+          : resolveDefaultWebSocketUrl());
     this.connect();
   }
 

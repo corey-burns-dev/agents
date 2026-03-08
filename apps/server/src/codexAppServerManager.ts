@@ -971,6 +971,51 @@ export class CodexAppServerManager extends EventEmitter<CodexAppServerManagerEve
     });
   }
 
+  private cancelPendingInteractions(context: CodexSessionContext, reason: string): void {
+    for (const pendingRequest of context.pendingApprovals.values()) {
+      this.emitEvent({
+        id: EventId.makeUnsafe(randomUUID()),
+        kind: "notification",
+        provider: "codex",
+        threadId: context.session.threadId,
+        createdAt: new Date().toISOString(),
+        method: "item/requestApproval/decision",
+        turnId: pendingRequest.turnId,
+        itemId: pendingRequest.itemId,
+        requestId: pendingRequest.requestId,
+        requestKind: pendingRequest.requestKind,
+        payload: {
+          requestId: pendingRequest.requestId,
+          requestKind: pendingRequest.requestKind,
+          decision: "cancel",
+          reason,
+        },
+      });
+    }
+
+    for (const pendingRequest of context.pendingUserInputs.values()) {
+      this.emitEvent({
+        id: EventId.makeUnsafe(randomUUID()),
+        kind: "notification",
+        provider: "codex",
+        threadId: context.session.threadId,
+        createdAt: new Date().toISOString(),
+        method: "item/tool/requestUserInput/answered",
+        turnId: pendingRequest.turnId,
+        itemId: pendingRequest.itemId,
+        requestId: pendingRequest.requestId,
+        payload: {
+          requestId: pendingRequest.requestId,
+          answers: {},
+          reason,
+        },
+      });
+    }
+
+    context.pendingApprovals.clear();
+    context.pendingUserInputs.clear();
+  }
+
   stopSession(threadId: ThreadId): void {
     const context = this.sessions.get(threadId);
     if (!context) {
@@ -984,8 +1029,7 @@ export class CodexAppServerManager extends EventEmitter<CodexAppServerManagerEve
       pending.reject(new Error("Session stopped before request completed."));
     }
     context.pending.clear();
-    context.pendingApprovals.clear();
-    context.pendingUserInputs.clear();
+    this.cancelPendingInteractions(context, "Session stopped");
 
     context.output.close();
 
@@ -1050,6 +1094,7 @@ export class CodexAppServerManager extends EventEmitter<CodexAppServerManagerEve
 
     context.child.on("error", (error) => {
       const message = error.message || "codex app-server process errored.";
+      this.cancelPendingInteractions(context, message);
       this.updateSession(context, {
         status: "error",
         lastError: message,
@@ -1063,6 +1108,7 @@ export class CodexAppServerManager extends EventEmitter<CodexAppServerManagerEve
       }
 
       const message = `codex app-server exited (code=${code ?? "null"}, signal=${signal ?? "null"}).`;
+      this.cancelPendingInteractions(context, message);
       this.updateSession(context, {
         status: "closed",
         activeTurnId: undefined,

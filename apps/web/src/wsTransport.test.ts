@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { WsTransport } from "./wsTransport";
+import { resolveDefaultWebSocketUrl, WsTransport } from "./wsTransport";
 
 type WsEventType = "open" | "message" | "close" | "error";
 type WsListener = (event?: { data?: unknown }) => void;
@@ -14,10 +14,12 @@ class MockWebSocket {
   static readonly CLOSED = 3;
 
   readyState = MockWebSocket.CONNECTING;
+  readonly url: string;
   readonly sent: string[] = [];
   private readonly listeners = new Map<WsEventType, Set<WsListener>>();
 
-  constructor(_url: string) {
+  constructor(url: string) {
+    this.url = url;
     sockets.push(this);
   }
 
@@ -70,7 +72,11 @@ beforeEach(() => {
   Object.defineProperty(globalThis, "window", {
     configurable: true,
     value: {
-      location: { hostname: "localhost", port: "3020" },
+      location: {
+        href: "http://localhost:3020/",
+        hostname: "localhost",
+        port: "3020",
+      },
       desktopBridge: undefined,
     },
   });
@@ -104,6 +110,22 @@ describe("WsTransport", () => {
     expect(listener).toHaveBeenCalledWith({ status: "ok" });
 
     transport.dispose();
+  });
+
+  it("preserves the page query string in the fallback websocket url", () => {
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {
+        location: {
+          href: "http://localhost:3020/?token=secret-token",
+          hostname: "localhost",
+          port: "3020",
+        },
+        desktopBridge: undefined,
+      },
+    });
+
+    expect(resolveDefaultWebSocketUrl()).toBe("ws://localhost:3020/?token=secret-token");
   });
 
   it("resolves pending requests for valid response envelopes", async () => {

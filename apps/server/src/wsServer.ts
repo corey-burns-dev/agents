@@ -7,6 +7,7 @@
  * @module Server
  */
 import http from "node:http";
+import { lstat, realpath } from "node:fs/promises";
 import type { Duplex } from "node:stream";
 
 import Mime from "@effect/platform-node/Mime";
@@ -153,6 +154,19 @@ function toPosixRelativePath(input: string): string {
   return input.replaceAll("\\", "/");
 }
 
+function isPathWithinRoot(params: {
+  candidatePath: string;
+  rootPath: string;
+  path: Path.Path;
+}): boolean {
+  const normalizedRoot = params.rootPath.endsWith(params.path.sep)
+    ? params.rootPath
+    : `${params.rootPath}${params.path.sep}`;
+  return (
+    params.candidatePath === params.rootPath || params.candidatePath.startsWith(normalizedRoot)
+  );
+}
+
 function resolveWorkspaceWritePath(params: {
   workspaceRoot: string;
   relativePath: string;
@@ -167,9 +181,10 @@ function resolveWorkspaceWritePath(params: {
     );
   }
 
-  const absolutePath = params.path.resolve(params.workspaceRoot, normalizedInputPath);
+  const resolvedWorkspaceRoot = params.path.resolve(params.workspaceRoot);
+  const absolutePath = params.path.resolve(resolvedWorkspaceRoot, normalizedInputPath);
   const relativeToRoot = toPosixRelativePath(
-    params.path.relative(params.workspaceRoot, absolutePath),
+    params.path.relative(resolvedWorkspaceRoot, absolutePath),
   );
   if (
     relativeToRoot.length === 0 ||
@@ -185,9 +200,70 @@ function resolveWorkspaceWritePath(params: {
     );
   }
 
-  return Effect.succeed({
-    absolutePath,
-    relativePath: relativeToRoot,
+  return Effect.gen(function* () {
+    const workspaceRootRealPath = yield* Effect.tryPromise({
+      try: () => realpath(resolvedWorkspaceRoot),
+      catch: () =>
+        new RouteRequestError({
+          message: `Project directory does not exist: ${resolvedWorkspaceRoot}`,
+        }),
+    });
+
+    let resolvedTargetPath = workspaceRootRealPath;
+    for (const segment of relativeToRoot.split("/")) {
+      if (segment.length === 0) {
+        continue;
+      }
+
+      const nextPath = params.path.resolve(resolvedTargetPath, segment);
+      const nextStats = yield* Effect.tryPromise({
+        try: async () => {
+          try {
+            return await lstat(nextPath);
+          } catch (error) {
+            const maybeCode = (error as NodeJS.ErrnoException).code;
+            if (maybeCode === "ENOENT") {
+              return null;
+            }
+            throw error;
+          }
+        },
+        catch: () =>
+          new RouteRequestError({
+            message: `Failed to validate workspace file path: ${relativeToRoot}`,
+          }),
+      });
+
+      if (nextStats?.isSymbolicLink()) {
+        const symlinkRealPath = yield* Effect.tryPromise({
+          try: () => realpath(nextPath),
+          catch: () =>
+            new RouteRequestError({
+              message: `Failed to validate workspace file path: ${relativeToRoot}`,
+            }),
+        });
+        if (
+          !isPathWithinRoot({
+            candidatePath: symlinkRealPath,
+            rootPath: workspaceRootRealPath,
+            path: params.path,
+          })
+        ) {
+          return yield* new RouteRequestError({
+            message: "Workspace file path must stay within the project root.",
+          });
+        }
+        resolvedTargetPath = symlinkRealPath;
+        continue;
+      }
+
+      resolvedTargetPath = nextPath;
+    }
+
+    return {
+      absolutePath: resolvedTargetPath,
+      relativePath: relativeToRoot,
+    };
   });
 }
 

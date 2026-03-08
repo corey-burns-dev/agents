@@ -1574,6 +1574,32 @@ describe("WebSocket Server", () => {
     expect(fs.existsSync(path.join(workspace, "..", "escape.md"))).toBe(false);
   });
 
+  it("rejects projects.writeFile paths that escape through workspace symlinks", async () => {
+    const workspace = makeTempDir("t3code-ws-write-file-symlink-");
+    const escapeRoot = makeTempDir("t3code-ws-write-file-symlink-target-");
+    const symlinkPath = path.join(workspace, "linked");
+
+    fs.symlinkSync(escapeRoot, symlinkPath, process.platform === "win32" ? "junction" : "dir");
+
+    server = await createTestServer({ cwd: "/test" });
+    const addr = server.address();
+    const port = typeof addr === "object" && addr !== null ? addr.port : 0;
+
+    const ws = await connectWs(port);
+    connections.push(ws);
+    await waitForMessage(ws);
+
+    const response = await sendRequest(ws, WS_METHODS.projectsWriteFile, {
+      cwd: workspace,
+      relativePath: "linked/escape.md",
+      contents: "# no\n",
+    });
+
+    expect(response.result).toBeUndefined();
+    expect(response.error?.message).toContain("Workspace file path must stay within the project root.");
+    expect(fs.existsSync(path.join(escapeRoot, "escape.md"))).toBe(false);
+  });
+
   it("routes git core methods over websocket", async () => {
     const listBranches = vi.fn(() =>
       Effect.succeed({

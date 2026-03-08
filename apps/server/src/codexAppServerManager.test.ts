@@ -748,6 +748,101 @@ describe("respondToUserInput", () => {
   });
 });
 
+describe("stopSession", () => {
+  it("emits cancellation events for pending approvals and structured prompts", () => {
+    const manager = new CodexAppServerManager();
+    const emitEvent = vi
+      .spyOn(manager as unknown as { emitEvent: (...args: unknown[]) => void }, "emitEvent")
+      .mockImplementation(() => {});
+    const outputClose = vi.fn();
+    const childKill = vi.fn();
+
+    const context = {
+      session: {
+        provider: "codex",
+        status: "running",
+        threadId: asThreadId("thread_1"),
+        runtimeMode: "full-access",
+        model: "gpt-5.3-codex",
+        resumeCursor: { threadId: "thread_1" },
+        createdAt: "2026-02-10T00:00:00.000Z",
+        updatedAt: "2026-02-10T00:00:00.000Z",
+      },
+      account: {
+        type: "unknown",
+        planType: null,
+        sparkEnabled: true,
+      },
+      child: {
+        stdin: { writable: true },
+        killed: false,
+        kill: childKill,
+      },
+      output: {
+        close: outputClose,
+      },
+      pending: new Map(),
+      pendingApprovals: new Map([
+        [
+          ApprovalRequestId.makeUnsafe("req-approval-1"),
+          {
+            requestId: ApprovalRequestId.makeUnsafe("req-approval-1"),
+            jsonRpcId: 10,
+            method: "item/commandExecution/requestApproval",
+            requestKind: "command",
+            threadId: asThreadId("thread_1"),
+          },
+        ],
+      ]),
+      pendingUserInputs: new Map([
+        [
+          ApprovalRequestId.makeUnsafe("req-user-input-1"),
+          {
+            requestId: ApprovalRequestId.makeUnsafe("req-user-input-1"),
+            jsonRpcId: 11,
+            threadId: asThreadId("thread_1"),
+          },
+        ],
+      ]),
+      nextRequestId: 1,
+      stopping: false,
+    };
+
+    (
+      manager as unknown as {
+        sessions: Map<ThreadId, typeof context>;
+      }
+    ).sessions.set(asThreadId("thread_1"), context);
+
+    manager.stopSession(asThreadId("thread_1"));
+
+    expect(emitEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "item/requestApproval/decision",
+        requestId: "req-approval-1",
+        payload: expect.objectContaining({
+          requestId: "req-approval-1",
+          decision: "cancel",
+          reason: "Session stopped",
+        }),
+      }),
+    );
+    expect(emitEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "item/tool/requestUserInput/answered",
+        requestId: "req-user-input-1",
+        payload: {
+          requestId: "req-user-input-1",
+          answers: {},
+          reason: "Session stopped",
+        },
+      }),
+    );
+    expect(outputClose).toHaveBeenCalledOnce();
+    expect(childKill).toHaveBeenCalledOnce();
+  });
+});
+
 describe.skipIf(!process.env.CODEX_BINARY_PATH)("startSession live Codex resume", () => {
   it(
     "keeps prior thread history when resuming with a changed runtime mode",
