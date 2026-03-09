@@ -142,6 +142,7 @@ import { ComposerArea, type ComposerCommandItem } from "./ChatViewComposerArea";
 import { type ExpandedImagePreview, MessageList } from "./ChatViewMessageList";
 import { Toolbar } from "./ChatViewToolbar";
 import type { ComposerPromptEditorHandle } from "./ComposerPromptEditor";
+import PlanSidebar from "./PlanSidebar";
 import type { NewProjectScriptInput } from "./ProjectScriptsControl";
 import ThreadTerminalDrawer from "./ThreadTerminalDrawer";
 import { Button } from "./ui/button";
@@ -432,6 +433,16 @@ export default function ChatView({ threadId }: ChatViewProps) {
 	const [expandedWorkGroups, setExpandedWorkGroups] = useState<
 		Record<string, boolean>
 	>({});
+	const [planSidebarOpen, setPlanSidebarOpen] = useState(false);
+	const planSidebarDismissedForTurnRef = useRef<string | null>(null);
+	const planSidebarOpenOnNextThreadRef = useRef(false);
+	// Provider/model for the next "Implement plan in new thread" action; independent of
+	// lockedProvider so the user can choose a different AI for the new thread.
+	const [implementationProvider, setImplementationProvider] =
+		useState<ProviderKind>("codex");
+	const [implementationModel, setImplementationModel] = useState<ModelSlug>(
+		() => DEFAULT_MODEL_BY_PROVIDER.codex,
+	);
 	const [nowTick, setNowTick] = useState(() => Date.now());
 	const [terminalFocusRequestId, setTerminalFocusRequestId] = useState(0);
 	const [composerHighlightedItemId, setComposerHighlightedItemId] = useState<
@@ -605,6 +616,18 @@ export default function ChatView({ threadId }: ChatViewProps) {
 		markThreadVisited,
 	]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally run on active thread change
+	useEffect(() => {
+		setExpandedWorkGroups({});
+		if (planSidebarOpenOnNextThreadRef.current) {
+			planSidebarOpenOnNextThreadRef.current = false;
+			setPlanSidebarOpen(true);
+		} else {
+			setPlanSidebarOpen(false);
+		}
+		planSidebarDismissedForTurnRef.current = null;
+	}, [activeThread?.id]);
+
 	const sessionProvider = activeThread?.session?.provider ?? null;
 	const selectedProviderByThreadId = composerDraft.provider;
 	const hasThreadStarted = Boolean(
@@ -620,6 +643,8 @@ export default function ChatView({ threadId }: ChatViewProps) {
 		: null;
 	const selectedProvider: ProviderKind =
 		lockedProvider ?? selectedProviderByThreadId ?? "codex";
+	const effectiveInteractionMode: ProviderInteractionMode =
+		selectedProvider === "gemini" ? "default" : interactionMode;
 	const baseThreadModel = resolveModelSlugForProvider(
 		selectedProvider,
 		activeThread?.model ??
@@ -706,6 +731,34 @@ export default function ChatView({ threadId }: ChatViewProps) {
 			),
 		[lockedProvider, modelOptionsByProvider],
 	);
+
+	const implementationProviderStartOptions = useMemo(
+		() => getProviderStartOptionsForProvider(settings, implementationProvider),
+		[settings, implementationProvider],
+	);
+	const implementationReasoningOptions = getReasoningEffortOptions(
+		implementationProvider,
+	);
+	const implementationModelOptionsForDispatch = useMemo(() => {
+		if (implementationProvider !== "codex") return undefined;
+		const defaultEffort = getDefaultReasoningEffort(implementationProvider);
+		const codexOptions = {
+			...(implementationReasoningOptions.length > 0 && defaultEffort
+				? { reasoningEffort: defaultEffort }
+				: {}),
+		};
+		return Object.keys(codexOptions).length > 0
+			? { codex: codexOptions }
+			: undefined;
+	}, [implementationProvider, implementationReasoningOptions.length]);
+	const implementationModelForPickerWithCustomFallback = useMemo(() => {
+		const currentOptions = modelOptionsByProvider[implementationProvider];
+		return currentOptions.some((option) => option.slug === implementationModel)
+			? implementationModel
+			: (normalizeModelSlug(implementationModel, implementationProvider) ??
+					implementationModel);
+	}, [implementationModel, implementationProvider, modelOptionsByProvider]);
+
 	const phase = derivePhase(activeThread?.session ?? null);
 	const isConnecting = phase === "connecting";
 	const isSendBusy = sendPhase !== "idle";
@@ -795,6 +848,17 @@ export default function ChatView({ threadId }: ChatViewProps) {
 		activeThread?.proposedPlans,
 		latestTurnSettled,
 	]);
+
+	// When a proposed plan appears, default implementation-thread provider/model to
+	// the current thread so "Implement in new thread" matches existing behavior until
+	// the user changes it in the plan sidebar.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: only re-init when proposed plan identity changes
+	useEffect(() => {
+		if (activeProposedPlan?.turnId == null) return;
+		setImplementationProvider(selectedProvider);
+		setImplementationModel(selectedModel);
+	}, [activeProposedPlan?.turnId]);
+
 	const activePlan = useMemo(
 		() =>
 			deriveActivePlanState(
@@ -1121,36 +1185,40 @@ export default function ChatView({ threadId }: ChatViewProps) {
 		}
 
 		if (composerTrigger.kind === "slash-command") {
-			const slashCommandItems = [
+			const baseSlashItems = [
 				{
 					id: "slash:model",
-					type: "slash-command",
+					type: "slash-command" as const,
 					command: "model",
 					label: "/model",
 					description: "Switch response model for this thread",
 				},
-				{
-					id: "slash:plan",
-					type: "slash-command",
-					command: "plan",
-					label: "/plan",
-					description: "Switch this thread into plan mode",
-				},
-				{
-					id: "slash:default",
-					type: "slash-command",
-					command: "default",
-					label: "/default",
-					description: "Switch this thread back to normal chat mode",
-				},
+				...(selectedProvider !== "gemini"
+					? [
+							{
+								id: "slash:plan" as const,
+								type: "slash-command" as const,
+								command: "plan" as const,
+								label: "/plan",
+								description: "Switch this thread into plan mode",
+							},
+							{
+								id: "slash:default" as const,
+								type: "slash-command" as const,
+								command: "default" as const,
+								label: "/default",
+								description: "Switch this thread back to normal chat mode",
+							},
+						]
+					: []),
 			] satisfies ReadonlyArray<
 				Extract<ComposerCommandItem, { type: "slash-command" }>
 			>;
 			const query = composerTrigger.query.trim().toLowerCase();
 			if (!query) {
-				return [...slashCommandItems];
+				return [...baseSlashItems];
 			}
-			return slashCommandItems.filter(
+			return baseSlashItems.filter(
 				(item) =>
 					item.command.includes(query) || item.label.slice(1).includes(query),
 			);
@@ -1180,6 +1248,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 	}, [
 		composerTrigger,
 		searchableModelOptions,
+		selectedProvider,
 		selectedServiceTierSetting,
 		workspaceEntries,
 	]);
@@ -2644,7 +2713,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 					title,
 					model: threadCreateModel,
 					runtimeMode,
-					interactionMode,
+					interactionMode: effectiveInteractionMode,
 					branch: nextThreadBranch,
 					worktreePath: nextThreadWorktreePath,
 					createdAt: activeThreadForSend.createdAt,
@@ -2694,7 +2763,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 					createdAt: messageCreatedAt,
 					...(selectedModel ? { model: selectedModel } : {}),
 					runtimeMode,
-					interactionMode,
+					interactionMode: effectiveInteractionMode,
 				});
 			}
 
@@ -2732,7 +2801,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 					? "streaming"
 					: "buffered",
 				runtimeMode,
-				interactionMode,
+				interactionMode: effectiveInteractionMode,
 				createdAt: messageCreatedAt,
 			});
 			turnStartSucceeded = true;
@@ -3023,18 +3092,25 @@ export default function ChatView({ threadId }: ChatViewProps) {
 			shouldAutoScrollRef.current = true;
 			forceStickToBottom();
 
+			const effectiveNextInteractionMode: ProviderInteractionMode =
+				selectedProvider === "gemini" ? "default" : nextInteractionMode;
+
 			try {
 				await persistThreadSettingsForNextTurn({
 					threadId: threadIdForSend,
 					createdAt: messageCreatedAt,
 					...(selectedModel ? { model: selectedModel } : {}),
 					runtimeMode,
-					interactionMode: nextInteractionMode,
+					interactionMode: effectiveNextInteractionMode,
 				});
 
 				// Keep the mode toggle and plan-follow-up banner in sync immediately
 				// while the same-thread implementation turn is starting.
 				setComposerDraftInteractionMode(threadIdForSend, nextInteractionMode);
+				if (nextInteractionMode === "default") {
+					planSidebarDismissedForTurnRef.current = null;
+					setPlanSidebarOpen(true);
+				}
 
 				await api.orchestration.dispatchCommand({
 					type: "thread.turn.start",
@@ -3058,7 +3134,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 						? "streaming"
 						: "buffered",
 					runtimeMode,
-					interactionMode: nextInteractionMode,
+					interactionMode: effectiveNextInteractionMode,
 					createdAt: messageCreatedAt,
 				});
 				sendInFlightRef.current = false;
@@ -3117,10 +3193,10 @@ export default function ChatView({ threadId }: ChatViewProps) {
 			buildPlanImplementationThreadTitle(planMarkdown),
 		);
 		const nextThreadModel: ModelSlug =
-			selectedModel ||
+			implementationModel ||
 			(activeThread.model as ModelSlug) ||
 			(activeProject.model as ModelSlug) ||
-			DEFAULT_MODEL_BY_PROVIDER.codex;
+			DEFAULT_MODEL_BY_PROVIDER[implementationProvider];
 
 		sendInFlightRef.current = true;
 		beginSendPhase("sending-turn");
@@ -3154,13 +3230,13 @@ export default function ChatView({ threadId }: ChatViewProps) {
 						text: implementationPrompt,
 						attachments: [],
 					},
-					provider: selectedProvider,
-					model: selectedModel || undefined,
-					...(selectedModelOptionsForDispatch
-						? { modelOptions: selectedModelOptionsForDispatch }
+					provider: implementationProvider,
+					model: implementationModel || undefined,
+					...(implementationModelOptionsForDispatch
+						? { modelOptions: implementationModelOptionsForDispatch }
 						: {}),
-					...(selectedProviderStartOptions
-						? { providerOptions: selectedProviderStartOptions }
+					...(implementationProviderStartOptions
+						? { providerOptions: implementationProviderStartOptions }
 						: {}),
 					assistantDeliveryMode: settings.enableAssistantStreaming
 						? "streaming"
@@ -3173,6 +3249,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 			.then(() => api.orchestration.getSnapshot())
 			.then((snapshot) => {
 				syncServerReadModel(snapshot);
+				planSidebarOpenOnNextThreadRef.current = true;
 				return navigate({
 					to: "/$threadId",
 					params: { threadId: nextThreadId },
@@ -3210,13 +3287,13 @@ export default function ChatView({ threadId }: ChatViewProps) {
 		isConnecting,
 		isSendBusy,
 		isServerThread,
+		implementationModel,
+		implementationModelOptionsForDispatch,
+		implementationProvider,
+		implementationProviderStartOptions,
 		navigate,
 		resetSendPhase,
 		runtimeMode,
-		selectedModel,
-		selectedModelOptionsForDispatch,
-		selectedProvider,
-		selectedProviderStartOptions,
 		settings.enableAssistantStreaming,
 		syncServerReadModel,
 	]);
@@ -3247,6 +3324,19 @@ export default function ChatView({ threadId }: ChatViewProps) {
 			setComposerDraftProvider,
 			settings,
 		],
+	);
+	const onImplementationProviderModelChange = useCallback(
+		(provider: ProviderKind, model: ModelSlug) => {
+			setImplementationProvider(provider);
+			setImplementationModel(
+				resolveAppModelSelection(
+					provider,
+					getCustomModelsForProvider(settings, provider),
+					model,
+				) as ModelSlug,
+			);
+		},
+		[settings],
 	);
 	const onEffortSelect = useCallback(
 		(effort: CodexReasoningEffort) => {
@@ -3630,135 +3720,186 @@ export default function ChatView({ threadId }: ChatViewProps) {
 				isDesktopShell={isDesktopShell}
 				providerStatus={activeProviderStatus}
 				threadError={activeThread.error}
-				activePlan={activePlan}
 			/>
 
-			<MessageList
-				scrollContainerRef={setMessagesScrollContainerRef}
-				onScroll={onMessagesScroll}
-				onClickCapture={onMessagesClickCapture}
-				onWheel={onMessagesWheel}
-				onPointerDown={onMessagesPointerDown}
-				onPointerUp={onMessagesPointerUp}
-				onPointerCancel={onMessagesPointerCancel}
-				onTouchStart={onMessagesTouchStart}
-				onTouchMove={onMessagesTouchMove}
-				onTouchEnd={onMessagesTouchEnd}
-				hasMessages={timelineEntries.length > 0}
-				isWorking={isWorking}
-				activeTurnInProgress={isWorking || !latestTurnSettled}
-				activeTurnStartedAt={activeWorkStartedAt}
-				scrollContainer={messagesScrollElement}
-				timelineEntries={timelineEntries}
-				completionDividerBeforeEntryId={completionDividerBeforeEntryId}
-				completionSummary={completionSummary}
-				turnDiffSummaryByAssistantMessageId={
-					turnDiffSummaryByAssistantMessageId
-				}
-				nowIso={nowIso}
-				expandedWorkGroups={expandedWorkGroups}
-				onToggleWorkGroup={onToggleWorkGroup}
-				onOpenTurnDiff={onOpenTurnDiff}
-				revertTurnCountByUserMessageId={revertTurnCountByUserMessageId}
-				onRevertUserMessage={onRevertUserMessage}
-				isRevertingCheckpoint={isRevertingCheckpoint}
-				onImageExpand={onExpandTimelineImage}
-				markdownCwd={gitCwd ?? undefined}
-				resolvedTheme={resolvedTheme}
-				workspaceRoot={activeProject?.cwd ?? undefined}
-			/>
+			<div className="flex min-h-0 flex-1">
+				<div className="flex min-h-0 min-w-0 flex-1 flex-col">
+					<MessageList
+						scrollContainerRef={setMessagesScrollContainerRef}
+						onScroll={onMessagesScroll}
+						onClickCapture={onMessagesClickCapture}
+						onWheel={onMessagesWheel}
+						onPointerDown={onMessagesPointerDown}
+						onPointerUp={onMessagesPointerUp}
+						onPointerCancel={onMessagesPointerCancel}
+						onTouchStart={onMessagesTouchStart}
+						onTouchMove={onMessagesTouchMove}
+						onTouchEnd={onMessagesTouchEnd}
+						hasMessages={timelineEntries.length > 0}
+						isWorking={isWorking}
+						activeTurnInProgress={isWorking || !latestTurnSettled}
+						activeTurnStartedAt={activeWorkStartedAt}
+						scrollContainer={messagesScrollElement}
+						timelineEntries={timelineEntries}
+						completionDividerBeforeEntryId={completionDividerBeforeEntryId}
+						completionSummary={completionSummary}
+						turnDiffSummaryByAssistantMessageId={
+							turnDiffSummaryByAssistantMessageId
+						}
+						nowIso={nowIso}
+						expandedWorkGroups={expandedWorkGroups}
+						onToggleWorkGroup={onToggleWorkGroup}
+						onOpenTurnDiff={onOpenTurnDiff}
+						revertTurnCountByUserMessageId={revertTurnCountByUserMessageId}
+						onRevertUserMessage={onRevertUserMessage}
+						isRevertingCheckpoint={isRevertingCheckpoint}
+						onImageExpand={onExpandTimelineImage}
+						markdownCwd={gitCwd ?? undefined}
+						resolvedTheme={resolvedTheme}
+						workspaceRoot={activeProject?.cwd ?? undefined}
+					/>
 
-			<ComposerArea
-				formRef={composerFormRef}
-				onSubmit={onSend}
-				isGitRepo={isGitRepo}
-				isDragOverComposer={isDragOverComposer}
-				onDragEnter={onComposerDragEnter}
-				onDragOver={onComposerDragOver}
-				onDragLeave={onComposerDragLeave}
-				onDrop={onComposerDrop}
-				activePendingApproval={activePendingApproval}
-				pendingApprovalsCount={pendingApprovals.length}
-				pendingUserInputs={pendingUserInputs}
-				respondingUserInputRequestIds={respondingUserInputRequestIds}
-				activePendingDraftAnswers={activePendingDraftAnswers}
-				activePendingQuestionIndex={activePendingQuestionIndex}
-				onSelectActivePendingUserInputOption={
-					onSelectActivePendingUserInputOption
-				}
-				showPlanFollowUpPrompt={showPlanFollowUpPrompt}
-				activeProposedPlan={activeProposedPlan}
-				hasComposerHeader={hasComposerHeader}
-				composerMenuOpen={composerMenuOpen}
-				isComposerApprovalState={isComposerApprovalState}
-				composerMenuItems={composerMenuItems}
-				resolvedTheme={resolvedTheme}
-				isComposerMenuLoading={isComposerMenuLoading}
-				composerTriggerKind={composerTriggerKind}
-				activeComposerMenuItemId={activeComposerMenuItem?.id ?? null}
-				onComposerMenuItemHighlighted={onComposerMenuItemHighlighted}
-				onSelectComposerItem={onSelectComposerItem}
-				composerImages={composerImages}
-				onExpandImage={setExpandedImage}
-				nonPersistedComposerImageIdSet={nonPersistedComposerImageIdSet}
-				removeComposerImage={removeComposerImage}
-				composerEditorRef={composerEditorRef}
-				composerValue={
-					isComposerApprovalState
-						? ""
-						: activePendingProgress
-							? activePendingProgress.customAnswer
-							: prompt
-				}
-				composerCursor={composerCursor}
-				onPromptChange={onPromptChange}
-				onComposerCommandKey={onComposerCommandKey}
-				onComposerPaste={onComposerPaste}
-				placeholder={
-					isComposerApprovalState
-						? (activePendingApproval?.detail ??
-							"Resolve this approval request to continue")
-						: activePendingProgress
-							? "Type your own answer, or leave this blank to use the selected option"
-							: showPlanFollowUpPrompt && activeProposedPlan
-								? "Add feedback to refine the plan, or leave this blank to implement it"
-								: phase === "disconnected"
-									? "Ask for follow-up changes or attach images"
-									: "Ask anything, @tag files/folders, or use /model"
-				}
-				isConnecting={isConnecting}
-				selectedProvider={selectedProvider}
-				selectedModelForPickerWithCustomFallback={
-					selectedModelForPickerWithCustomFallback
-				}
-				lockedProvider={lockedProvider}
-				modelOptionsByProvider={modelOptionsByProvider}
-				selectedServiceTierSetting={selectedServiceTierSetting}
-				onProviderModelSelect={onProviderModelSelect}
-				selectedEffort={selectedEffort}
-				selectedCodexFastModeEnabled={selectedCodexFastModeEnabled}
-				reasoningOptions={reasoningOptions}
-				onEffortSelect={onEffortSelect}
-				onCodexFastModeChange={onCodexFastModeChange}
-				interactionMode={interactionMode}
-				toggleInteractionMode={toggleInteractionMode}
-				runtimeMode={runtimeMode}
-				handleRuntimeModeChange={handleRuntimeModeChange}
-				isPreparingWorktree={isPreparingWorktree}
-				activePendingProgress={activePendingProgress}
-				activePendingIsResponding={activePendingIsResponding}
-				activePendingResolvedAnswers={activePendingResolvedAnswers}
-				onPreviousActivePendingUserInputQuestion={
-					onPreviousActivePendingUserInputQuestion
-				}
-				phase={phase}
-				onInterrupt={onInterrupt}
-				prompt={prompt}
-				isSendBusy={isSendBusy}
-				onImplementPlanInNewThread={onImplementPlanInNewThread}
-				respondingRequestIds={respondingRequestIds}
-				onRespondToApproval={onRespondToApproval}
-			/>
+					<ComposerArea
+						formRef={composerFormRef}
+						onSubmit={onSend}
+						isGitRepo={isGitRepo}
+						isDragOverComposer={isDragOverComposer}
+						onDragEnter={onComposerDragEnter}
+						onDragOver={onComposerDragOver}
+						onDragLeave={onComposerDragLeave}
+						onDrop={onComposerDrop}
+						activePendingApproval={activePendingApproval}
+						pendingApprovalsCount={pendingApprovals.length}
+						pendingUserInputs={pendingUserInputs}
+						respondingUserInputRequestIds={respondingUserInputRequestIds}
+						activePendingDraftAnswers={activePendingDraftAnswers}
+						activePendingQuestionIndex={activePendingQuestionIndex}
+						onSelectActivePendingUserInputOption={
+							onSelectActivePendingUserInputOption
+						}
+						showPlanFollowUpPrompt={showPlanFollowUpPrompt}
+						activeProposedPlan={activeProposedPlan}
+						hasComposerHeader={hasComposerHeader}
+						composerMenuOpen={composerMenuOpen}
+						isComposerApprovalState={isComposerApprovalState}
+						composerMenuItems={composerMenuItems}
+						resolvedTheme={resolvedTheme}
+						isComposerMenuLoading={isComposerMenuLoading}
+						composerTriggerKind={composerTriggerKind}
+						activeComposerMenuItemId={activeComposerMenuItem?.id ?? null}
+						onComposerMenuItemHighlighted={onComposerMenuItemHighlighted}
+						onSelectComposerItem={onSelectComposerItem}
+						composerImages={composerImages}
+						onExpandImage={setExpandedImage}
+						nonPersistedComposerImageIdSet={nonPersistedComposerImageIdSet}
+						removeComposerImage={removeComposerImage}
+						composerEditorRef={composerEditorRef}
+						composerValue={
+							isComposerApprovalState
+								? ""
+								: activePendingProgress
+									? activePendingProgress.customAnswer
+									: prompt
+						}
+						composerCursor={composerCursor}
+						onPromptChange={onPromptChange}
+						onComposerCommandKey={onComposerCommandKey}
+						onComposerPaste={onComposerPaste}
+						placeholder={
+							isComposerApprovalState
+								? (activePendingApproval?.detail ??
+									"Resolve this approval request to continue")
+								: activePendingProgress
+									? "Type your own answer, or leave this blank to use the selected option"
+									: showPlanFollowUpPrompt && activeProposedPlan
+										? "Add feedback to refine the plan, or leave this blank to implement it"
+										: phase === "disconnected"
+											? "Ask for follow-up changes or attach images"
+											: "Ask anything, @tag files/folders, or use /model"
+						}
+						isConnecting={isConnecting}
+						selectedProvider={selectedProvider}
+						selectedModelForPickerWithCustomFallback={
+							selectedModelForPickerWithCustomFallback
+						}
+						lockedProvider={lockedProvider}
+						modelOptionsByProvider={modelOptionsByProvider}
+						selectedServiceTierSetting={selectedServiceTierSetting}
+						onProviderModelSelect={onProviderModelSelect}
+						selectedEffort={selectedEffort}
+						selectedCodexFastModeEnabled={selectedCodexFastModeEnabled}
+						reasoningOptions={reasoningOptions}
+						onEffortSelect={onEffortSelect}
+						onCodexFastModeChange={onCodexFastModeChange}
+						planModeSupported={selectedProvider !== "gemini"}
+						interactionMode={interactionMode}
+						toggleInteractionMode={toggleInteractionMode}
+						runtimeMode={runtimeMode}
+						handleRuntimeModeChange={handleRuntimeModeChange}
+						isPreparingWorktree={isPreparingWorktree}
+						activePendingProgress={activePendingProgress}
+						activePendingIsResponding={activePendingIsResponding}
+						activePendingResolvedAnswers={activePendingResolvedAnswers}
+						onPreviousActivePendingUserInputQuestion={
+							onPreviousActivePendingUserInputQuestion
+						}
+						phase={phase}
+						onInterrupt={onInterrupt}
+						prompt={prompt}
+						isSendBusy={isSendBusy}
+						onImplementPlanInNewThread={onImplementPlanInNewThread}
+						respondingRequestIds={respondingRequestIds}
+						onRespondToApproval={onRespondToApproval}
+						planSidebarOpen={planSidebarOpen}
+						showPlanSidebarToggle={
+							activePlan !== null ||
+							activeProposedPlan !== null ||
+							planSidebarOpen
+						}
+						onTogglePlanSidebar={() => {
+							setPlanSidebarOpen((open) => {
+								if (open) {
+									const turnKey =
+										activePlan?.turnId ?? activeProposedPlan?.turnId ?? null;
+									if (turnKey) {
+										planSidebarDismissedForTurnRef.current = turnKey;
+									}
+								} else {
+									planSidebarDismissedForTurnRef.current = null;
+								}
+								return !open;
+							});
+						}}
+						onAdvanceActivePendingUserInput={onAdvanceActivePendingUserInput}
+					/>
+				</div>
+
+				{planSidebarOpen ? (
+					<PlanSidebar
+						activePlan={activePlan}
+						activeProposedPlan={activeProposedPlan}
+						markdownCwd={gitCwd ?? undefined}
+						workspaceRoot={activeProject?.cwd ?? undefined}
+						onClose={() => {
+							setPlanSidebarOpen(false);
+							const turnKey =
+								activePlan?.turnId ?? activeProposedPlan?.turnId ?? null;
+							if (turnKey) {
+								planSidebarDismissedForTurnRef.current = turnKey;
+							}
+						}}
+						implementationProvider={implementationProvider}
+						implementationModelForPicker={
+							implementationModelForPickerWithCustomFallback
+						}
+						modelOptionsByProvider={modelOptionsByProvider}
+						selectedServiceTierSetting={selectedServiceTierSetting}
+						onImplementationProviderModelChange={
+							onImplementationProviderModelChange
+						}
+					/>
+				) : null}
+			</div>
 
 			{isGitRepo && (
 				<BranchToolbar

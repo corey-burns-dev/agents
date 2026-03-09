@@ -19,7 +19,7 @@ import {
 } from "../keybindings";
 import { isMacPlatform, isWindowsPlatform } from "../lib/utils";
 import { readNativeApi } from "../nativeApi";
-import { type deriveActivePlanState, formatTimestamp } from "../session-logic";
+
 import GitActionsControl from "./GitActionsControl";
 import { CursorIcon, type Icon, VisualStudioCode, Zed } from "./Icons";
 import ProjectScriptsControl, {
@@ -208,57 +208,6 @@ const ProviderHealthBanner = memo(function ProviderHealthBanner({
 	);
 });
 
-const PlanModePanel = memo(function PlanModePanel({
-	activePlan,
-}: {
-	activePlan: ReturnType<typeof deriveActivePlanState>;
-}) {
-	if (!activePlan) return null;
-
-	return (
-		<div className="pt-3 mx-auto max-w-3xl">
-			<div className="rounded-xl border border-border/70 bg-muted/30 p-4">
-				<div className="flex items-center gap-2">
-					<Badge variant="secondary">Plan</Badge>
-					<span className="text-xs text-muted-foreground">
-						Updated {formatTimestamp(activePlan.createdAt)}
-					</span>
-				</div>
-				{activePlan.explanation ? (
-					<p className="mt-2 text-sm text-muted-foreground">
-						{activePlan.explanation}
-					</p>
-				) : null}
-				<div className="mt-3 space-y-2">
-					{activePlan.steps.map((step) => (
-						<div
-							key={`${step.status}:${step.step}`}
-							className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/80 px-3 py-2"
-						>
-							<Badge
-								variant={
-									step.status === "completed"
-										? "default"
-										: step.status === "inProgress"
-											? "secondary"
-											: "outline"
-								}
-							>
-								{step.status === "inProgress"
-									? "In progress"
-									: step.status === "completed"
-										? "Done"
-										: "Pending"}
-							</Badge>
-							<div className="min-w-0 flex-1 text-sm">{step.step}</div>
-						</div>
-					))}
-				</div>
-			</div>
-		</div>
-	);
-});
-
 const OpenInPicker = memo(function OpenInPicker({
 	keybindings,
 	availableEditors,
@@ -395,7 +344,6 @@ export interface ToolbarProps extends ChatHeaderProps {
 	isDesktopShell: boolean;
 	providerStatus: ServerProviderStatus | null;
 	threadError: string | null;
-	activePlan: ReturnType<typeof deriveActivePlanState>;
 }
 
 export function Toolbar(props: ToolbarProps) {
@@ -429,7 +377,6 @@ export function Toolbar(props: ToolbarProps) {
 			</header>
 			<ProviderHealthBanner status={props.providerStatus} />
 			<ThreadErrorBanner error={props.threadError} />
-			<PlanModePanel activePlan={props.activePlan} />
 		</>
 	);
 }

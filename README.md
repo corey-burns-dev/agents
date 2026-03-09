@@ -1,14 +1,19 @@
+<p align="center">
+  <img src="assets/prod/logo.svg" alt="Agents Logo" width="128" height="128">
+</p>
+
 # Agents
 
 Agents is a minimal web GUI and desktop application for coding agents.
 
-**This project is a fork of the agents app (agents.chat).**
+**This project is a fork of T3 (agents.chat).** I was a bit too impatient to wait for official Gemini and Claude support, and I really wanted native Linux Qt6 builds, so here we are.
 
 ## Key Additions & Differences
 
-- **Gemini Support**: Gemini use is enabled and fully supported.
-- **Tauri Builds**: The desktop application is built entirely using [Tauri](https://v2.tauri.app/), providing a fast, native, and lightweight experience.
-- **No Electron**: We have completely removed Electron from the stack in favor of Tauri.
+- **Gemini & Claude Support**: First-class support for Gemini and Claude models.
+- **Qt6 Linux Builds**: Native Linux support via Qt6 for those who prefer it over Tauri/Electron.
+- **Tauri Builds**: The primary desktop application is built using [Tauri](https://v2.tauri.app/), providing a fast, native, and lightweight experience.
+- **No Electron**: We have completely removed Electron from the stack in favor of Tauri and Qt6.
 
 ## How to use
 

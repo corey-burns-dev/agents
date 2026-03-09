@@ -1472,15 +1472,18 @@ const makeGeminiAdapter = (options?: GeminiAdapterLiveOptions) =>
 
 				return yield* Effect.tryPromise({
 					try: () => {
+						// serviceTier is not passed; Gemini app-server sendTurn does not use it.
 						const managerInput = {
 							threadId: input.threadId,
 							...(input.input !== undefined ? { input: input.input } : {}),
 							...(input.model !== undefined ? { model: input.model } : {}),
-							...(input.serviceTier !== undefined
-								? { serviceTier: input.serviceTier }
-								: {}),
 							...(input.interactionMode !== undefined
-								? { interactionMode: input.interactionMode }
+								? {
+										interactionMode:
+											input.interactionMode === "plan"
+												? "default"
+												: input.interactionMode,
+									}
 								: {}),
 							...(geminiAttachments.length > 0
 								? { attachments: geminiAttachments }

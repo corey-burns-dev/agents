@@ -194,7 +194,9 @@ function createSnapshotForTargetUser(options: {
 	targetMessageId: MessageId;
 	targetText: string;
 	targetAttachmentCount?: number;
+	providerName?: "codex" | "gemini" | "claude-code";
 }): OrchestrationReadModel {
+	const sessionProviderName = options.providerName ?? "codex";
 	const messages: Array<
 		OrchestrationReadModel["threads"][number]["messages"][number]
 	> = [];
@@ -269,7 +271,7 @@ function createSnapshotForTargetUser(options: {
 				session: {
 					threadId: THREAD_ID,
 					status: "ready",
-					providerName: "codex",
+					providerName: sessionProviderName,
 					runtimeMode: "full-access",
 					activeTurnId: null,
 					lastError: null,
@@ -278,6 +280,21 @@ function createSnapshotForTargetUser(options: {
 			},
 		],
 		updatedAt: NOW_ISO,
+	};
+}
+
+function createServerConfigWithProviders(
+	providers: Array<"codex" | "gemini" | "claude-code">,
+): ServerConfig {
+	return {
+		...createBaseServerConfig(),
+		providers: providers.map((provider) => ({
+			provider,
+			status: "ready",
+			available: true,
+			authStatus: "authenticated",
+			checkedAt: NOW_ISO,
+		})),
 	};
 }
 
@@ -973,6 +990,39 @@ describe("ChatView timeline estimator parity (full app)", () => {
 				},
 				{ timeout: 8_000, interval: 16 },
 			);
+		} finally {
+			await mounted.cleanup();
+		}
+	});
+
+	it("hides plan mode toggle when provider is Gemini", async () => {
+		const mounted = await mountChatView({
+			viewport: DEFAULT_VIEWPORT,
+			snapshot: createSnapshotForTargetUser({
+				targetMessageId: "msg-user-target-hotkey" as MessageId,
+				targetText: "hotkey target",
+				providerName: "gemini",
+			}),
+			configureFixture: (f) => {
+				f.serverConfig = createServerConfigWithProviders(["codex", "gemini"]);
+			},
+		});
+
+		try {
+			await waitForComposerEditor();
+			await waitForLayout();
+			const planModeButtons = Array.from(
+				document.querySelectorAll<HTMLButtonElement>("button"),
+			).filter(
+				(btn) =>
+					btn.title?.includes("plan mode") ||
+					btn.title?.includes("enter plan mode") ||
+					btn.title?.includes("return to normal chat mode"),
+			);
+			expect(
+				planModeButtons,
+				"Plan mode toggle should not be visible when provider is Gemini",
+			).toHaveLength(0);
 		} finally {
 			await mounted.cleanup();
 		}

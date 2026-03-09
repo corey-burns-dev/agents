@@ -663,6 +663,8 @@ const makeClaudeCodeAdapter = (options?: ClaudeCodeAdapterLiveOptions) =>
 			});
 		};
 
+		// Attachments are not passed: the Claude CLI invocation (buildSpawnArgs) only
+		// accepts a single prompt string and does not support image input for the current invocation.
 		const sendTurn: ClaudeCodeAdapterShape["sendTurn"] = (input) =>
 			Effect.tryPromise({
 				try: () =>
