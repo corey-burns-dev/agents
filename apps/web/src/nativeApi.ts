@@ -1,5 +1,6 @@
 import type { NativeApi } from "@agents/contracts";
 
+import { isNativeApiDisabledByEnv } from "./env";
 import { createWsNativeApi } from "./wsNativeApi";
 
 let cachedApi: NativeApi | undefined;
@@ -11,6 +12,14 @@ export function readNativeApi(): NativeApi | undefined {
 	if (window.nativeApi) {
 		cachedApi = window.nativeApi;
 		return cachedApi;
+	}
+
+	if (
+		isNativeApiDisabledByEnv &&
+		window.desktopBridge === undefined &&
+		window.nativeApi === undefined
+	) {
+		return undefined;
 	}
 
 	cachedApi = createWsNativeApi();

@@ -21,7 +21,7 @@ import { cn } from "~/lib/utils";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH = "16rem";
+const SIDEBAR_WIDTH = "calc(16rem * var(--density-scale))";
 const SIDEBAR_WIDTH_MOBILE = "calc(100vw - var(--spacing(3)))";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_RESIZE_DEFAULT_MIN_WIDTH = 16 * 16;
@@ -150,7 +150,7 @@ function SidebarProvider({
 		<SidebarContext.Provider value={contextValue}>
 			<div
 				className={cn(
-					"group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar",
+					"sidebar-density-wrapper group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar",
 					className,
 				)}
 				data-slot="sidebar-wrapper"
@@ -211,7 +211,7 @@ function Sidebar({
 			<SidebarInstanceContext.Provider value={instanceContextValue}>
 				<div
 					className={cn(
-						"flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground",
+						"sidebar-density-surface flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground",
 						className,
 					)}
 					data-slot="sidebar"
@@ -229,7 +229,7 @@ function Sidebar({
 				<Sheet onOpenChange={setOpenMobile} open={openMobile} {...props}>
 					<SheetPopup
 						className={cn(
-							"w-(--sidebar-width) max-w-none bg-sidebar p-0 text-sidebar-foreground",
+							"sidebar-density-surface w-(--sidebar-width) max-w-none bg-sidebar p-0 text-sidebar-foreground",
 							className,
 						)}
 						data-mobile="true"
@@ -596,7 +596,7 @@ function SidebarRail({
 		<button
 			aria-label={railLabel}
 			className={cn(
-				"-translate-x-1/2 group-data-[side=left]:-right-4 absolute inset-y-0 z-20 hidden w-4 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border group-data-[side=right]:left-0 sm:flex",
+				"-translate-x-1/2 group-data-[side=left]:-right-4 absolute inset-y-0 z-20 hidden w-4 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 hover:after:bg-sidebar-border group-data-[side=right]:left-0 sm:flex",
 				"in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
 				"[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
 				"group-data-[collapsible=offcanvas]:translate-x-0 hover:group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:after:left-full",
@@ -624,7 +624,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
 	return (
 		<main
 			className={cn(
-				"relative flex w-full flex-1 flex-col bg-background",
+				"sidebar-density-inset relative flex w-full flex-1 flex-col bg-background",
 				"md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2 md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm/5",
 				className,
 			)}
@@ -640,7 +640,10 @@ function SidebarInput({
 }: React.ComponentProps<typeof Input>) {
 	return (
 		<Input
-			className={cn("h-8 w-full bg-background shadow-none", className)}
+			className={cn(
+				"sidebar-density-input h-8 w-full bg-background shadow-none",
+				className,
+			)}
 			data-sidebar="input"
 			data-slot="sidebar-input"
 			{...props}
@@ -651,7 +654,10 @@ function SidebarInput({
 function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
-			className={cn("flex flex-col gap-2 p-2", className)}
+			className={cn(
+				"sidebar-density-header flex flex-col gap-2 p-2",
+				className,
+			)}
 			data-sidebar="header"
 			data-slot="sidebar-header"
 			{...props}
@@ -662,7 +668,10 @@ function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
 function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
-			className={cn("flex flex-col gap-2 p-2", className)}
+			className={cn(
+				"sidebar-density-footer flex flex-col gap-2 p-2",
+				className,
+			)}
 			data-sidebar="footer"
 			data-slot="sidebar-footer"
 			{...props}
@@ -676,7 +685,10 @@ function SidebarSeparator({
 }: React.ComponentProps<typeof Separator>) {
 	return (
 		<Separator
-			className={cn("mx-2 w-auto bg-sidebar-border", className)}
+			className={cn(
+				"sidebar-density-separator mx-2 w-auto bg-sidebar-border",
+				className,
+			)}
 			data-sidebar="separator"
 			data-slot="sidebar-separator"
 			{...props}

@@ -28,6 +28,9 @@ export default defineConfig({
 		"import.meta.env.VITE_WS_URL": JSON.stringify(
 			process.env.VITE_WS_URL ?? "",
 		),
+		"import.meta.env.VITE_NATIVE_API_DISABLED": JSON.stringify(
+			process.env.VITE_NATIVE_API_DISABLED ?? "",
+		),
 	},
 	resolve: {
 		alias: {

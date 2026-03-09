@@ -235,16 +235,24 @@ export function createDevRunnerEnv({
 		const serverPort = port ?? BASE_SERVER_PORT + serverOffset;
 		const webPort = BASE_WEB_PORT + webOffset;
 		const resolvedStateDir = yield* resolveStateDir(stateDir);
+		const wsUrl = `ws://localhost:${serverPort}`;
 
 		const portStr = String(serverPort);
 		const output: NodeJS.ProcessEnv = {
 			...baseEnv,
 			AGENTS_PORT: portStr,
 			PORT: String(webPort),
-			VITE_WS_URL: `ws://localhost:${serverPort}`,
 			VITE_DEV_SERVER_URL: devUrl?.toString() ?? `http://localhost:${webPort}`,
 			AGENTS_STATE_DIR: resolvedStateDir,
 		};
+
+		if (mode === "dev:web") {
+			delete output.VITE_WS_URL;
+			output.VITE_NATIVE_API_DISABLED = "1";
+		} else {
+			output.VITE_WS_URL = wsUrl;
+			delete output.VITE_NATIVE_API_DISABLED;
+		}
 
 		if (host !== undefined) {
 			output.AGENTS_HOST = host;
@@ -303,7 +311,6 @@ export function createDevRunnerEnv({
 		if (mode === "dev:desktop" || mode === "dev:qt6") {
 			output.AGENTS_MODE = "desktop";
 			output.AGENTS_MODE = "desktop";
-			const wsUrl = `ws://localhost:${serverPort}`;
 			output.AGENTS_DESKTOP_WS_URL = wsUrl;
 			output.AGENTS_DESKTOP_WS_URL = wsUrl;
 			// Server in desktop dev mode shouldn't open a browser

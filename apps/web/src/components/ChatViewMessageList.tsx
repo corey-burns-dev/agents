@@ -1,4 +1,4 @@
-import type { MessageId, TurnId } from "@agents/contracts";
+import type { MessageId, ProviderKind, TurnId } from "@agents/contracts";
 import {
 	measureElement as measureVirtualElement,
 	useVirtualizer,
@@ -141,6 +141,37 @@ function workToneClass(tone: "thinking" | "tool" | "info" | "error"): string {
 	if (tone === "tool") return "text-muted-foreground/70";
 	if (tone === "thinking") return "text-muted-foreground/50";
 	return "text-muted-foreground/40";
+}
+
+function workingDotClass(provider: ProviderKind, index: 0 | 1 | 2): string {
+	if (provider === "gemini") {
+		switch (index) {
+			case 0:
+				return "bg-sky-400/90";
+			case 1:
+				return "bg-blue-400/85";
+			default:
+				return "bg-indigo-400/80";
+		}
+	}
+	if (provider === "claude-code") {
+		switch (index) {
+			case 0:
+				return "bg-amber-400/90";
+			case 1:
+				return "bg-orange-400/85";
+			default:
+				return "bg-orange-500/80";
+		}
+	}
+	switch (index) {
+		case 0:
+			return "bg-slate-200/90";
+		case 1:
+			return "bg-zinc-300/85";
+		default:
+			return "bg-slate-400/75";
+	}
 }
 
 function normalizePlanMarkdownForExport(planMarkdown: string): string {
@@ -642,6 +673,7 @@ function estimateTimelineProposedPlanHeight(
 interface MessagesTimelineProps {
 	hasMessages: boolean;
 	isWorking: boolean;
+	activeProvider: ProviderKind;
 	activeTurnInProgress: boolean;
 	activeTurnStartedAt: string | null;
 	scrollContainer: HTMLDivElement | null;
@@ -665,6 +697,7 @@ interface MessagesTimelineProps {
 const MessagesTimeline = memo(function MessagesTimeline({
 	hasMessages,
 	isWorking,
+	activeProvider,
 	activeTurnInProgress,
 	activeTurnStartedAt,
 	scrollContainer,
@@ -1050,9 +1083,9 @@ const MessagesTimeline = memo(function MessagesTimeline({
 									</div>
 								)}
 								{row.message.text && (
-									<pre className="whitespace-pre-wrap wrap-break-word font-mono text-sm leading-relaxed text-foreground">
+									<div className="whitespace-pre-wrap wrap-break-word text-sm leading-relaxed text-foreground">
 										{row.message.text}
-									</pre>
+									</div>
 								)}
 								<div className="mt-1.5 flex items-center justify-end gap-2">
 									<div className="flex items-center gap-1.5 opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100">
@@ -1201,9 +1234,24 @@ const MessagesTimeline = memo(function MessagesTimeline({
 				<div className="flex items-center gap-2 py-0.5 pl-1.5">
 					<div className="flex items-center gap-2 pt-1 text-[11px] text-muted-foreground/70">
 						<span className="inline-flex items-center gap-0.75">
-							<span className="h-1 w-1 rounded-full bg-muted-foreground/30 animate-pulse" />
-							<span className="h-1 w-1 rounded-full bg-muted-foreground/30 animate-pulse [animation-delay:200ms]" />
-							<span className="h-1 w-1 rounded-full bg-muted-foreground/30 animate-pulse [animation-delay:400ms]" />
+							<span
+								className={cn(
+									"h-1 w-1 rounded-full animate-pulse",
+									workingDotClass(activeProvider, 0),
+								)}
+							/>
+							<span
+								className={cn(
+									"h-1 w-1 rounded-full animate-pulse [animation-delay:200ms]",
+									workingDotClass(activeProvider, 1),
+								)}
+							/>
+							<span
+								className={cn(
+									"h-1 w-1 rounded-full animate-pulse [animation-delay:400ms]",
+									workingDotClass(activeProvider, 2),
+								)}
+							/>
 						</span>
 						<span>
 							{row.createdAt
@@ -1295,6 +1343,7 @@ export function MessageList(props: MessageListProps) {
 			<MessagesTimeline
 				hasMessages={props.hasMessages}
 				isWorking={props.isWorking}
+				activeProvider={props.activeProvider}
 				activeTurnInProgress={props.activeTurnInProgress}
 				activeTurnStartedAt={props.activeTurnStartedAt}
 				scrollContainer={props.scrollContainer}

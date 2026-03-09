@@ -24,28 +24,19 @@ import {
 } from "../components/ui/select";
 import { Switch } from "../components/ui/switch";
 import { isDesktopShell } from "../env";
-import { useTheme } from "../hooks/useTheme";
 import { serverConfigQueryOptions } from "../lib/serverReactQuery";
 import { ensureNativeApi } from "../nativeApi";
 import { preferredTerminalEditor } from "../terminal-links";
-
-const THEME_OPTIONS = [
-	{
-		value: "system",
-		label: "System",
-		description: "Match your OS appearance setting.",
-	},
-	{
-		value: "light",
-		label: "Light",
-		description: "Always use the light theme.",
-	},
-	{
-		value: "dark",
-		label: "Dark",
-		description: "Always use the dark theme.",
-	},
-] as const;
+import {
+	DARK_THEME_PRESETS,
+	DENSITY_OPTIONS,
+	LIGHT_THEME_PRESET,
+	RADIUS_PRESETS,
+	resolveUISettingsTheme,
+	THEME_MODE_OPTIONS,
+	type ThemeMode,
+	useUISettings,
+} from "../uiSettings";
 
 const MODEL_PROVIDER_SETTINGS: Array<{
 	provider: ProviderKind;
@@ -80,8 +71,59 @@ const MODEL_PROVIDER_SETTINGS: Array<{
 	},
 ] as const;
 
+const THEME_SWATCH_META: Record<
+	(typeof DARK_THEME_PRESETS)[number] | typeof LIGHT_THEME_PRESET,
+	{ bg: string; card: string; primary: string; label: string }
+> = {
+	"default-dark": {
+		bg: "#0d0d0f",
+		card: "#131315",
+		primary: "#7c6af7",
+		label: "Dark",
+	},
+	midnight: {
+		bg: "#05050a",
+		card: "#0a0a14",
+		primary: "#8b7ef8",
+		label: "Midnight",
+	},
+	nord: { bg: "#2e3440", card: "#3b4252", primary: "#88c0d0", label: "Nord" },
+	"catppuccin-mocha": {
+		bg: "#1e1e2e",
+		card: "#313244",
+		primary: "#cba6f7",
+		label: "Mocha",
+	},
+	"default-light": {
+		bg: "#ffffff",
+		card: "#f0f0f2",
+		primary: "#6356e5",
+		label: "Light",
+	},
+};
+
+const THEME_MODE_LABELS: Record<ThemeMode, string> = {
+	system: "System",
+	light: "Light",
+	dark: "Dark",
+};
+
+const RADIUS_PREVIEW_PX: Record<(typeof RADIUS_PRESETS)[number], number> = {
+	sharp: 0,
+	default: 6,
+	rounded: 10,
+	pill: 18,
+};
+
+const DENSITY_LABELS: Record<(typeof DENSITY_OPTIONS)[number], string> = {
+	compact: "Compact",
+	comfortable: "Comfortable",
+	spacious: "Spacious",
+};
+
 function SettingsRouteView() {
-	const { theme, setTheme, resolvedTheme } = useTheme();
+	const { settings: uiSettings, updateUISettings } = useUISettings();
+	const { resolvedTheme } = resolveUISettingsTheme(uiSettings);
 	const { settings, defaults, updateSettings } = useAppSettings();
 	const serverConfigQuery = useQuery(serverConfigQueryOptions());
 	const [isOpeningKeybindings, setIsOpeningKeybindings] = useState(false);
@@ -218,61 +260,241 @@ function SettingsRouteView() {
 							</p>
 						</header>
 
-						<section className="rounded-2xl border border-border bg-card p-5">
-							<div className="mb-4">
+						<section className="settings-density-card rounded-2xl border border-border bg-card p-5">
+							<div className="mb-5">
 								<h2 className="text-sm font-medium text-foreground">
 									Appearance
 								</h2>
 								<p className="mt-1 text-xs text-muted-foreground">
-									Choose how Agents handles light and dark mode.
+									Customize colors, typography, spacing, and effects.
 								</p>
 							</div>
 
-							<div
-								className="space-y-2"
-								role="radiogroup"
-								aria-label="Theme preference"
-							>
-								{THEME_OPTIONS.map((option) => {
-									const selected = theme === option.value;
-									return (
+							<div className="mb-5">
+								<p className="mb-2.5 text-xs font-medium text-foreground">
+									Theme Mode
+								</p>
+								<div
+									className="chrome-density-toolbar flex flex-wrap gap-1.5"
+									role="radiogroup"
+									aria-label="Theme mode"
+								>
+									{THEME_MODE_OPTIONS.map((mode) => (
 										<button
-											key={option.value}
+											key={mode}
 											type="button"
 											role="radio"
-											aria-checked={selected}
-											className={`flex w-full items-start justify-between rounded-lg border px-3 py-2 text-left transition-colors ${
-												selected
-													? "border-primary/60 bg-primary/8 text-foreground"
-													: "border-border bg-background text-muted-foreground hover:bg-accent"
+											aria-checked={uiSettings.themeMode === mode}
+											onClick={() => updateUISettings({ themeMode: mode })}
+											className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+												uiSettings.themeMode === mode
+													? "bg-primary text-primary-foreground"
+													: "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
 											}`}
-											onClick={() => setTheme(option.value)}
 										>
-											<span className="flex flex-col">
-												<span className="text-sm font-medium">
-													{option.label}
-												</span>
-												<span className="text-xs">{option.description}</span>
-											</span>
-											{selected ? (
-												<span className="rounded bg-primary/14 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
-													Selected
-												</span>
-											) : null}
+											{THEME_MODE_LABELS[mode]}
 										</button>
-									);
-								})}
+									))}
+								</div>
+								<p className="mt-2 text-xs text-muted-foreground">
+									{uiSettings.themeMode === "system"
+										? `Following your OS appearance. Currently ${resolvedTheme}.`
+										: uiSettings.themeMode === "light"
+											? "Uses the light palette."
+											: "Uses the selected dark palette."}
+								</p>
 							</div>
 
-							<p className="mt-4 text-xs text-muted-foreground">
-								Active theme:{" "}
-								<span className="font-medium text-foreground">
-									{resolvedTheme}
-								</span>
-							</p>
+							<div className="mb-5">
+								<p className="mb-2.5 text-xs font-medium text-foreground">
+									Palette
+								</p>
+								<div
+									className="flex flex-wrap gap-2.5"
+									role="radiogroup"
+									aria-label="Theme palette"
+								>
+									{(uiSettings.themeMode === "light"
+										? [LIGHT_THEME_PRESET]
+										: DARK_THEME_PRESETS
+									).map((preset) => {
+										const meta = THEME_SWATCH_META[preset];
+										const selected =
+											preset === LIGHT_THEME_PRESET
+												? resolvedTheme === "light"
+												: uiSettings.themePreset === preset;
+										const isLight = preset === "default-light";
+										return (
+											<button
+												key={preset}
+												type="button"
+												role="radio"
+												aria-checked={selected}
+												title={meta.label}
+												onClick={() => {
+													if (preset !== LIGHT_THEME_PRESET) {
+														updateUISettings({ themePreset: preset });
+													}
+												}}
+												className={`group flex flex-col items-center gap-1.5 rounded-lg p-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${selected ? "ring-2 ring-primary" : "ring-1 ring-border hover:ring-primary/40"}`}
+												disabled={preset === LIGHT_THEME_PRESET}
+											>
+												<div
+													className="relative h-12 w-16 overflow-hidden rounded"
+													style={{ background: meta.bg }}
+												>
+													<div
+														className="absolute bottom-0 left-0 right-0 h-6 rounded-t"
+														style={{ background: meta.card }}
+													/>
+													<div
+														className="absolute bottom-1.5 right-1.5 h-2.5 w-2.5 rounded-full"
+														style={{ background: meta.primary }}
+													/>
+													<div
+														className="absolute left-1.5 top-2 h-1 w-6 rounded-full opacity-40"
+														style={{ background: isLight ? "#333" : "#fff" }}
+													/>
+													<div
+														className="absolute left-1.5 top-4 h-1 w-4 rounded-full opacity-25"
+														style={{ background: isLight ? "#333" : "#fff" }}
+													/>
+												</div>
+												<span
+													className={`text-[10px] font-medium ${selected ? "text-primary" : "text-muted-foreground"}`}
+												>
+													{meta.label}
+												</span>
+											</button>
+										);
+									})}
+								</div>
+							</div>
+
+							{/* Font size */}
+							<div className="mb-5">
+								<div className="mb-2 flex items-center justify-between">
+									<p className="text-xs font-medium text-foreground">
+										Font Size
+									</p>
+									<span className="text-xs tabular-nums text-muted-foreground">
+										{uiSettings.fontSize}%
+									</span>
+								</div>
+								<div className="flex items-center gap-2.5">
+									<span className="text-xs text-muted-foreground">A</span>
+									<input
+										type="range"
+										min={75}
+										max={125}
+										step={5}
+										value={uiSettings.fontSize}
+										onChange={(e) =>
+											updateUISettings({ fontSize: Number(e.target.value) })
+										}
+										className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-primary"
+										aria-label="Font size"
+									/>
+									<span className="text-base text-muted-foreground">A</span>
+								</div>
+							</div>
+
+							{/* Density */}
+							<div className="mb-5">
+								<p className="mb-2 text-xs font-medium text-foreground">
+									Density
+								</p>
+								<p className="mb-2 text-xs text-muted-foreground">
+									Adjusts spacing in the app chrome without changing message
+									content layout.
+								</p>
+								<div
+									className="chrome-density-toolbar flex gap-1.5"
+									role="radiogroup"
+									aria-label="UI density"
+								>
+									{DENSITY_OPTIONS.map((d) => (
+										<button
+											key={d}
+											type="button"
+											role="radio"
+											aria-checked={uiSettings.density === d}
+											onClick={() => updateUISettings({ density: d })}
+											className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${uiSettings.density === d ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"}`}
+										>
+											{DENSITY_LABELS[d]}
+										</button>
+									))}
+								</div>
+							</div>
+
+							{/* Border radius */}
+							<div className="mb-5">
+								<p className="mb-2 text-xs font-medium text-foreground">
+									Corner Radius
+								</p>
+								<div
+									className="flex gap-2"
+									role="radiogroup"
+									aria-label="Corner radius"
+								>
+									{RADIUS_PRESETS.map((r) => {
+										const selected = uiSettings.radiusPreset === r;
+										const px = RADIUS_PREVIEW_PX[r];
+										const label =
+											r === "sharp"
+												? "Sharp"
+												: r === "default"
+													? "Default"
+													: r === "rounded"
+														? "Rounded"
+														: "Pill";
+										return (
+											<button
+												key={r}
+												type="button"
+												role="radio"
+												aria-checked={selected}
+												title={label}
+												onClick={() => updateUISettings({ radiusPreset: r })}
+												className={`flex flex-col items-center gap-1.5 rounded-lg p-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${selected ? "ring-2 ring-primary" : "ring-1 ring-border hover:ring-primary/40"}`}
+											>
+												<div
+													className={`h-7 w-9 border-2 transition-all ${selected ? "border-primary" : "border-muted-foreground/40"}`}
+													style={{ borderRadius: `${px}px` }}
+												/>
+												<span
+													className={`text-[10px] font-medium ${selected ? "text-primary" : "text-muted-foreground"}`}
+												>
+													{label}
+												</span>
+											</button>
+										);
+									})}
+								</div>
+							</div>
+
+							{/* Glass effect */}
+							<div className="flex items-center justify-between">
+								<div>
+									<p className="text-xs font-medium text-foreground">
+										Glass effect
+									</p>
+									<p className="text-xs text-muted-foreground">
+										Adds blur and transparency to panels.
+									</p>
+								</div>
+								<Switch
+									checked={uiSettings.glassEffect}
+									onCheckedChange={(checked) =>
+										updateUISettings({ glassEffect: checked })
+									}
+									aria-label="Toggle glass effect"
+								/>
+							</div>
 						</section>
 
-						<section className="rounded-2xl border border-border bg-card p-5">
+						<section className="settings-density-card rounded-2xl border border-border bg-card p-5">
 							<div className="mb-4">
 								<h2 className="text-sm font-medium text-foreground">
 									Codex App Server
@@ -343,7 +565,7 @@ function SettingsRouteView() {
 							</div>
 						</section>
 
-						<section className="rounded-2xl border border-border bg-card p-5">
+						<section className="settings-density-card rounded-2xl border border-border bg-card p-5">
 							<div className="mb-4">
 								<h2 className="text-sm font-medium text-foreground">
 									Gemini App Server
@@ -414,7 +636,7 @@ function SettingsRouteView() {
 							</div>
 						</section>
 
-						<section className="rounded-2xl border border-border bg-card p-5">
+						<section className="settings-density-card rounded-2xl border border-border bg-card p-5">
 							<div className="mb-4">
 								<h2 className="text-sm font-medium text-foreground">
 									Claude Code
@@ -495,7 +717,7 @@ function SettingsRouteView() {
 							</div>
 						</section>
 
-						<section className="rounded-2xl border border-border bg-card p-5">
+						<section className="settings-density-card rounded-2xl border border-border bg-card p-5">
 							<div className="mb-4">
 								<h2 className="text-sm font-medium text-foreground">Models</h2>
 								<p className="mt-1 text-xs text-muted-foreground">
@@ -698,7 +920,7 @@ function SettingsRouteView() {
 							</div>
 						</section>
 
-						<section className="rounded-2xl border border-border bg-card p-5">
+						<section className="settings-density-card rounded-2xl border border-border bg-card p-5">
 							<div className="mb-4">
 								<h2 className="text-sm font-medium text-foreground">
 									Responses
@@ -747,7 +969,7 @@ function SettingsRouteView() {
 							) : null}
 						</section>
 
-						<section className="rounded-2xl border border-border bg-card p-5">
+						<section className="settings-density-card rounded-2xl border border-border bg-card p-5">
 							<div className="mb-4">
 								<h2 className="text-sm font-medium text-foreground">
 									Keybindings
@@ -791,7 +1013,7 @@ function SettingsRouteView() {
 							</div>
 						</section>
 
-						<section className="rounded-2xl border border-border bg-card p-5">
+						<section className="settings-density-card rounded-2xl border border-border bg-card p-5">
 							<div className="mb-4">
 								<h2 className="text-sm font-medium text-foreground">Safety</h2>
 								<p className="mt-1 text-xs text-muted-foreground">

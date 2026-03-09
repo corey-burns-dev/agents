@@ -20,6 +20,7 @@ import {
 	ListTodoIcon,
 	LockIcon,
 	LockOpenIcon,
+	Mic,
 	XIcon,
 	ZapIcon,
 } from "lucide-react";
@@ -40,6 +41,7 @@ import type {
 	ComposerTriggerKind,
 } from "../composer-logic";
 import type { ComposerImageAttachment } from "../composerDraftStore";
+import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
 import { cn } from "../lib/utils";
 import {
 	derivePendingUserInputProgress,
@@ -138,7 +140,7 @@ const ComposerCommandMenuItem = memo(function ComposerCommandMenuItem(props: {
 			) : null}
 			<span className="flex min-w-0 items-center gap-1.5 truncate">
 				{props.item.type === "model" && props.item.showFastBadge ? (
-					<ZapIcon className="size-3.5 shrink-0 text-amber-500" />
+					<ZapIcon className="size-3.5 shrink-0 text-warning" />
 				) : null}
 				<span className="truncate">{props.item.label}</span>
 			</span>
@@ -337,6 +339,11 @@ const ComposerPendingUserInputCard = memo(
 		);
 		const activeQuestion = progress.activeQuestion;
 		const autoAdvanceTimerRef = useRef<number | null>(null);
+		const onAdvanceRef = useRef(onAdvance);
+
+		useEffect(() => {
+			onAdvanceRef.current = onAdvance;
+		}, [onAdvance]);
 
 		// Clear auto-advance timer on unmount
 		useEffect(() => {
@@ -355,10 +362,10 @@ const ComposerPendingUserInputCard = memo(
 				}
 				autoAdvanceTimerRef.current = window.setTimeout(() => {
 					autoAdvanceTimerRef.current = null;
-					onAdvance();
+					onAdvanceRef.current?.();
 				}, 200);
 			},
-			[onSelectOption, onAdvance],
+			[onSelectOption],
 		);
 
 		// Keyboard shortcut: number keys 1-9 select corresponding option and auto-advance.
@@ -431,7 +438,7 @@ const ComposerPendingUserInputCard = memo(
 								className={cn(
 									"group flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-all duration-150",
 									isSelected
-										? "border-blue-500/40 bg-blue-500/8 text-foreground"
+										? "border-primary/40 bg-primary/8 text-foreground"
 										: "border-transparent bg-muted/20 text-foreground/80 hover:bg-muted/40 hover:border-border/40",
 									isResponding && "opacity-50 cursor-not-allowed",
 								)}
@@ -441,7 +448,7 @@ const ComposerPendingUserInputCard = memo(
 										className={cn(
 											"flex size-5 shrink-0 items-center justify-center rounded text-[11px] font-medium tabular-nums transition-colors duration-150",
 											isSelected
-												? "bg-blue-500/20 text-blue-400"
+												? "bg-primary/20 text-primary"
 												: "bg-muted/40 text-muted-foreground/50 group-hover:bg-muted/60 group-hover:text-muted-foreground/70",
 										)}
 									>
@@ -457,7 +464,7 @@ const ComposerPendingUserInputCard = memo(
 									) : null}
 								</div>
 								{isSelected ? (
-									<CheckIcon className="size-3.5 shrink-0 text-blue-400" />
+									<CheckIcon className="size-3.5 shrink-0 text-primary" />
 								) : null}
 							</button>
 						);
@@ -589,7 +596,7 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
 					/>
 					{props.provider === "codex" &&
 					shouldShowFastTierIcon(props.model, props.serviceTierSetting) ? (
-						<ZapIcon className="size-3.5 shrink-0 text-amber-500" />
+						<ZapIcon className="size-3.5 shrink-0 text-warning" />
 					) : null}
 					<span className="truncate">{selectedModelLabel}</span>
 					<ChevronUpIcon aria-hidden="true" className="size-3 opacity-60" />
@@ -640,7 +647,7 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
 														modelOption.slug,
 														props.serviceTierSetting,
 													) ? (
-														<ZapIcon className="size-3.5 shrink-0 text-amber-500" />
+														<ZapIcon className="size-3.5 shrink-0 text-warning" />
 													) : null}
 													{modelOption.name}
 												</MenuRadioItem>
@@ -830,9 +837,30 @@ export interface ComposerAreaProps {
 	onTogglePlanSidebar: () => void;
 	showPlanSidebarToggle: boolean;
 	onAdvanceActivePendingUserInput: () => void;
+	onAppendToPrompt?: (text: string) => void;
+	isVoiceInputSupported?: boolean;
 }
 
 export function ComposerArea(props: ComposerAreaProps) {
+	const voiceSupported =
+		props.isVoiceInputSupported === true && props.onAppendToPrompt != null;
+	const voiceDisabled =
+		!voiceSupported ||
+		props.isConnecting ||
+		props.isComposerApprovalState ||
+		props.pendingUserInputs.length > 0;
+	const speech = useSpeechRecognition({
+		disabled: voiceDisabled,
+		onFinalTranscript: props.onAppendToPrompt ?? (() => {}),
+	});
+	const toggleVoice = useCallback(() => {
+		if (speech.status === "starting" || speech.status === "listening") {
+			speech.stop();
+		} else {
+			speech.start();
+		}
+	}, [speech.start, speech.status, speech.stop]);
+
 	return (
 		<div
 			className={cn(
@@ -848,7 +876,7 @@ export function ComposerArea(props: ComposerAreaProps) {
 			>
 				<section
 					aria-label="Message composer"
-					className={`group rounded-4xl border bg-card transition-colors duration-200 focus-within:border-ring/45 ${
+					className={`composer-density-shell group rounded-4xl border bg-card transition-colors duration-200 focus-within:border-ring/45 ${
 						props.isDragOverComposer
 							? "border-primary/70 bg-accent/30"
 							: "border-border"
@@ -890,7 +918,7 @@ export function ComposerArea(props: ComposerAreaProps) {
 
 					<div
 						className={cn(
-							"relative px-3 pb-2 sm:px-4",
+							"composer-density-padding relative px-3 pb-2 sm:px-4",
 							props.hasComposerHeader ? "pt-2.5 sm:pt-3" : "pt-3.5 sm:pt-4",
 						)}
 					>
@@ -908,12 +936,25 @@ export function ComposerArea(props: ComposerAreaProps) {
 							</div>
 						)}
 
+						{voiceSupported &&
+						speech.isListening &&
+						speech.interimTranscript ? (
+							<div className="mb-2 rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5 text-xs text-muted-foreground">
+								<span className="sr-only">Listening: </span>
+								{speech.interimTranscript}
+							</div>
+						) : null}
+						{voiceSupported && speech.error ? (
+							<div className="mb-2 rounded-md border border-destructive/30 bg-destructive/8 px-2.5 py-1.5 text-xs text-destructive-foreground">
+								{speech.error.message}
+							</div>
+						) : null}
 						{!props.isComposerApprovalState &&
 							props.pendingUserInputs.length === 0 &&
 							props.composerImages.length > 0 && (
 								<div className="mb-3 space-y-2">
 									{props.selectedProvider === "claude-code" && (
-										<div className="flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-700 dark:text-amber-400">
+										<div className="flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-2.5 py-1.5 text-xs text-warning">
 											<CircleAlertIcon className="size-3.5 shrink-0" />
 											<span>
 												Image attachments are not sent for Claude Code.
@@ -958,7 +999,7 @@ export function ComposerArea(props: ComposerAreaProps) {
 																<span
 																	role="img"
 																	aria-label="Draft attachment may not persist"
-																	className="absolute left-1 top-1 inline-flex items-center justify-center rounded bg-background/85 p-0.5 text-amber-600"
+																	className="absolute left-1 top-1 inline-flex items-center justify-center rounded bg-background/85 p-0.5 text-warning"
 																>
 																	<CircleAlertIcon className="size-3" />
 																</span>
@@ -1010,8 +1051,8 @@ export function ComposerArea(props: ComposerAreaProps) {
 							/>
 						</div>
 					) : (
-						<div className="flex flex-wrap items-center justify-between gap-2 px-2.5 pb-2.5 sm:flex-nowrap sm:gap-0 sm:px-3 sm:pb-3">
-							<div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:min-w-max sm:overflow-visible">
+						<div className="composer-density-toolbar flex flex-wrap items-center justify-between gap-2 px-2.5 pb-2.5 sm:flex-nowrap sm:gap-0 sm:px-3 sm:pb-3">
+							<div className="chrome-density-toolbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:min-w-max sm:overflow-visible">
 								<ProviderModelPicker
 									provider={props.selectedProvider}
 									model={props.selectedModelForPickerWithCustomFallback}
@@ -1109,7 +1150,7 @@ export function ComposerArea(props: ComposerAreaProps) {
 											className={cn(
 												"shrink-0 whitespace-nowrap px-2 sm:px-3",
 												props.planSidebarOpen
-													? "text-blue-400 hover:text-blue-300"
+													? "text-primary hover:text-primary/80"
 													: "text-muted-foreground/70 hover:text-foreground/80",
 											)}
 											size="sm"
@@ -1124,6 +1165,65 @@ export function ComposerArea(props: ComposerAreaProps) {
 											<ListTodoIcon />
 											<span className="sr-only sm:not-sr-only">Plan</span>
 										</Button>
+									</>
+								) : null}
+
+								{voiceSupported ? (
+									<>
+										<Separator
+											orientation="vertical"
+											className="mx-0.5 hidden h-4 sm:block"
+										/>
+										<Tooltip>
+											<TooltipTrigger
+												render={
+													<Button
+														variant="ghost"
+														size="sm"
+														type="button"
+														className={cn(
+															"shrink-0 px-2 sm:px-3",
+															speech.status === "starting" ||
+																speech.status === "listening"
+																? "text-rose-500 hover:text-rose-600"
+																: "text-muted-foreground/70 hover:text-foreground/80",
+														)}
+														disabled={voiceDisabled}
+														onClick={toggleVoice}
+														aria-label={
+															speech.status === "starting" ||
+															speech.status === "listening"
+																? "Stop voice input"
+																: "Start voice input"
+														}
+													>
+														{speech.status === "starting" ||
+														speech.status === "listening" ? (
+															<span className="flex items-center gap-1.5">
+																<span
+																	className="size-2 shrink-0 animate-pulse rounded-full bg-rose-500"
+																	aria-hidden
+																/>
+																<span className="sr-only sm:not-sr-only">
+																	{speech.status === "starting"
+																		? "Starting…"
+																		: "Listening…"}
+																</span>
+															</span>
+														) : (
+															<Mic className="size-4" />
+														)}
+													</Button>
+												}
+											/>
+											<TooltipPopup side="top">
+												{speech.status === "starting"
+													? "Starting voice input"
+													: speech.status === "listening"
+														? "Stop voice input"
+														: "Voice input"}
+											</TooltipPopup>
+										</Tooltip>
 									</>
 								) : null}
 							</div>
@@ -1168,7 +1268,7 @@ export function ComposerArea(props: ComposerAreaProps) {
 								) : props.phase === "running" ? (
 									<button
 										type="button"
-										className="flex size-8 items-center justify-center rounded-full bg-rose-500/90 text-white transition-all duration-150 hover:bg-rose-500 hover:scale-105 sm:h-8 sm:w-8"
+										className="flex size-8 items-center justify-center rounded-full bg-destructive/90 text-white transition-all duration-150 hover:bg-destructive hover:scale-105 sm:h-8 sm:w-8"
 										onClick={() => void props.onInterrupt()}
 										aria-label="Stop generation"
 									>

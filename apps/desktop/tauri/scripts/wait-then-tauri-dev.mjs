@@ -34,7 +34,7 @@ async function waitForServer() {
 
 await waitForServer();
 
-const child = spawn("bunx", ["tauri", "dev"], {
+const child = spawn("node", ["scripts/run-tauri.mjs", "dev"], {
 	cwd: desktopDir,
 	env: process.env,
 	stdio: "inherit",

@@ -40,8 +40,9 @@ export function parseDiffRouteSearch(
 	const diffTurnId = diffTurnIdRaw
 		? TurnId.makeUnsafe(diffTurnIdRaw)
 		: undefined;
-	const diffFilePath =
-		diff && diffTurnId ? normalizeSearchString(search.diffFilePath) : undefined;
+	const diffFilePath = diff
+		? normalizeSearchString(search.diffFilePath)
+		: undefined;
 
 	return {
 		...(diff ? { diff } : {}),

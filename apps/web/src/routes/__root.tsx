@@ -17,6 +17,7 @@ import {
 	toastManager,
 } from "../components/ui/toast";
 import { useComposerDraftStore } from "../composerDraftStore";
+import { isStandaloneWebDev } from "../env";
 import { providerQueryKeys } from "../lib/providerReactQuery";
 import {
 	serverConfigQueryOptions,
@@ -28,6 +29,7 @@ import { useStore } from "../store";
 import { preferredTerminalEditor } from "../terminal-links";
 import { terminalRunningSubprocessFromEvent } from "../terminalActivity";
 import { useTerminalStateStore } from "../terminalStateStore";
+import { useUISettings } from "../uiSettings";
 import {
 	getConnectionState,
 	onConnectionStateChange,
@@ -46,6 +48,7 @@ export const Route = createRootRouteWithContext<{
 });
 
 function RootRouteView() {
+	useUISettings(); // Applies UI settings (theme, font size, density, radius, glass) for app lifetime
 	const [connectionState, setConnectionState] = useState(getConnectionState);
 	useEffect(() => {
 		return onConnectionStateChange(setConnectionState);
@@ -54,10 +57,24 @@ function RootRouteView() {
 	if (!readNativeApi()) {
 		return (
 			<div className="flex h-screen flex-col bg-background text-foreground">
-				<div className="flex flex-1 items-center justify-center">
-					<p className="text-sm text-muted-foreground">
-						Connecting to {APP_DISPLAY_NAME} server...
-					</p>
+				<div className="flex flex-1 items-center justify-center px-6">
+					<div className="max-w-md space-y-2 text-center">
+						<p className="text-sm text-foreground">
+							{isStandaloneWebDev ? (
+								<>
+									<code>dev:web</code> is running without the Agents server.
+								</>
+							) : (
+								`Connecting to ${APP_DISPLAY_NAME} server...`
+							)}
+						</p>
+						{isStandaloneWebDev ? (
+							<p className="text-sm text-muted-foreground">
+								Run <code>bun dev</code> or <code>bun dev:server</code> to
+								enable backend features.
+							</p>
+						) : null}
+					</div>
 				</div>
 			</div>
 		);

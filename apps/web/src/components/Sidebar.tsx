@@ -52,6 +52,10 @@ import {
 	selectThreadTerminalState,
 	useTerminalStateStore,
 } from "../terminalStateStore";
+import {
+	buildProjectDraftThreadMap,
+	buildProjectThreadList,
+} from "../threadDrafts";
 import type { Thread } from "../types";
 import {
 	formatWorktreePathForDisplay,
@@ -299,6 +303,7 @@ export default function Sidebar() {
 	const projects = useStore((store) => store.projects);
 	const threads = useStore((store) => store.threads);
 	const markThreadUnread = useStore((store) => store.markThreadUnread);
+	const setProjectExpanded = useStore((store) => store.setProjectExpanded);
 	const toggleProject = useStore((store) => store.toggleProject);
 	const clearComposerDraftForThread = useComposerDraftStore(
 		(store) => store.clearThreadDraft,
@@ -324,6 +329,12 @@ export default function Sidebar() {
 	);
 	const clearProjectDraftThreadById = useComposerDraftStore(
 		(store) => store.clearProjectDraftThreadById,
+	);
+	const draftThreadsByThreadId = useComposerDraftStore(
+		(store) => store.draftThreadsByThreadId,
+	);
+	const projectDraftThreadIdByProjectId = useComposerDraftStore(
+		(store) => store.projectDraftThreadIdByProjectId,
 	);
 	const navigate = useNavigate();
 	const isOnSettings = useLocation({
@@ -366,6 +377,18 @@ export default function Sidebar() {
 		}
 		return map;
 	}, [threads]);
+	const persistedThreadIds = useMemo(
+		() => new Set(threads.map((thread) => thread.id)),
+		[threads],
+	);
+	const projectDraftThreads = useMemo(
+		() =>
+			buildProjectDraftThreadMap({
+				draftThreadsByThreadId,
+				projectDraftThreadIdByProjectId,
+			}),
+		[draftThreadsByThreadId, projectDraftThreadIdByProjectId],
+	);
 	const projectCwdById = useMemo(
 		() =>
 			new Map(projects.map((project) => [project.id, project.cwd] as const)),
@@ -463,6 +486,7 @@ export default function Sidebar() {
 			const storedDraftThread = getDraftThreadByProjectId(projectId);
 			if (storedDraftThread) {
 				return (async () => {
+					setProjectExpanded(projectId, true);
 					if (hasBranchOption || hasWorktreePathOption || hasEnvModeOption) {
 						setDraftThreadContext(storedDraftThread.threadId, {
 							...(hasBranchOption ? { branch: options?.branch ?? null } : {}),
@@ -501,12 +525,14 @@ export default function Sidebar() {
 						...(hasEnvModeOption ? { envMode: options?.envMode } : {}),
 					});
 				}
+				setProjectExpanded(projectId, true);
 				setProjectDraftThreadId(projectId, routeThreadId);
 				return Promise.resolve();
 			}
 			const threadId = newThreadId();
 			const createdAt = new Date().toISOString();
 			return (async () => {
+				setProjectExpanded(projectId, true);
 				setProjectDraftThreadId(projectId, threadId, {
 					createdAt,
 					branch: options?.branch ?? null,
@@ -527,6 +553,7 @@ export default function Sidebar() {
 			navigate,
 			getDraftThread,
 			routeThreadId,
+			setProjectExpanded,
 			setDraftThreadContext,
 			setProjectDraftThreadId,
 		],
@@ -1280,15 +1307,11 @@ export default function Sidebar() {
 
 					<SidebarMenu>
 						{projects.map((project) => {
-							const projectThreads = threads
-								.filter((thread) => thread.projectId === project.id)
-								.toSorted((a, b) => {
-									const byDate =
-										new Date(b.createdAt).getTime() -
-										new Date(a.createdAt).getTime();
-									if (byDate !== 0) return byDate;
-									return b.id.localeCompare(a.id);
-								});
+							const projectThreads = buildProjectThreadList({
+								project,
+								threads,
+								projectDraftThread: projectDraftThreads.get(project.id) ?? null,
+							});
 							const isThreadListExpanded = expandedThreadListsByProject.has(
 								project.id,
 							);
@@ -1315,7 +1338,7 @@ export default function Sidebar() {
 												render={
 													<SidebarMenuButton
 														size="sm"
-														className="gap-2 px-2 py-1.5 text-left hover:bg-accent group-hover/project-header:bg-accent group-hover/project-header:text-sidebar-accent-foreground"
+														className="gap-2 px-2 py-1.5 text-left hover:!bg-transparent hover:!text-sidebar-foreground group-hover/project-header:!bg-transparent group-hover/project-header:!text-sidebar-foreground"
 													/>
 												}
 												onContextMenu={(event) => {
@@ -1370,6 +1393,9 @@ export default function Sidebar() {
 											<SidebarMenuSub className="mx-1 my-0 w-full translate-x-0 gap-0 px-1.5 py-0">
 												{visibleThreads.map((thread) => {
 													const isActive = routeThreadId === thread.id;
+													const isPersistedThread = persistedThreadIds.has(
+														thread.id,
+													);
 													const threadStatus = threadStatusPill(
 														thread,
 														pendingApprovalByThreadId.get(thread.id) === true,
@@ -1393,10 +1419,10 @@ export default function Sidebar() {
 																render={<button type="button" />}
 																size="sm"
 																isActive={isActive}
-																className={`h-7 w-full translate-x-0 cursor-default justify-start px-2 text-left hover:bg-accent hover:text-foreground ${
+																className={`h-7 w-full translate-x-0 cursor-default justify-start px-2 text-left ${
 																	isActive
-																		? "bg-accent/85 text-foreground font-medium ring-1 ring-border/70 dark:bg-accent/55 dark:ring-border/50"
-																		: "text-muted-foreground"
+																		? "bg-accent/85 text-foreground font-medium ring-1 ring-border/70 hover:!bg-accent/85 hover:!text-foreground dark:bg-accent/55 dark:ring-border/50"
+																		: "text-muted-foreground hover:!bg-transparent hover:!text-muted-foreground"
 																}`}
 																onClick={() => {
 																	void navigate({
@@ -1417,6 +1443,9 @@ export default function Sidebar() {
 																	});
 																}}
 																onContextMenu={(event) => {
+																	if (!isPersistedThread) {
+																		return;
+																	}
 																	event.preventDefault();
 																	void handleThreadContextMenu(thread.id, {
 																		x: event.clientX,
@@ -1508,7 +1537,9 @@ export default function Sidebar() {
 																		/>
 																	) : (
 																		<span className="min-w-0 flex-1 truncate text-xs">
-																			{thread.title}
+																			{isPersistedThread
+																				? thread.title
+																				: "New thread"}
 																		</span>
 																	)}
 																</div>

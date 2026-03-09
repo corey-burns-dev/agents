@@ -4,9 +4,9 @@
 	"private": true,
 	"scripts": {
 		"dev": "node scripts/wait-then-tauri-dev.mjs",
-		"build": "tauri build",
-		"build:no-bundle": "tauri build --no-bundle",
-		"start": "tauri build && tauri run",
+		"build": "node scripts/run-tauri.mjs build",
+		"build:no-bundle": "node scripts/run-tauri.mjs build --no-bundle",
+		"start": "node scripts/run-tauri.mjs run",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run --passWithNoTests",
 		"smoke-test": "node scripts/smoke-test.mjs"

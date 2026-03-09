@@ -12,8 +12,10 @@ import {
 	ChevronRightIcon,
 	Columns2Icon,
 	Rows3Icon,
+	SearchIcon,
 } from "lucide-react";
 import {
+	type CSSProperties,
 	type WheelEvent as ReactWheelEvent,
 	useCallback,
 	useEffect,
@@ -38,12 +40,26 @@ import {
 	preferredTerminalEditor,
 	resolvePathLinkTarget,
 } from "../terminal-links";
+import {
+	DIFF_SIZE_OPTIONS,
+	type DiffSizeOption,
+	useUISettings,
+} from "../uiSettings";
+import { Input } from "./ui/input";
 import { Toggle, ToggleGroup } from "./ui/toggle-group";
 
 type DiffRenderMode = "stacked" | "split";
 type DiffThemeType = "light" | "dark";
 
 const DIFF_PANEL_UNSAFE_CSS = `
+:host {
+  --diffs-font-size: var(--diff-panel-font-size, 12.5px);
+  --diffs-line-height: var(--diff-panel-line-height, 19px);
+  --diffs-gap-inline: var(--diff-panel-gap-inline, 8px);
+  --diffs-gap-block: var(--diff-panel-gap-block, 8px);
+  --diffs-min-number-column-width-default: var(--diff-panel-min-number-width, 3ch);
+}
+
 [data-diffs-header],
 [data-diff],
 [data-file],
@@ -78,6 +94,7 @@ const DIFF_PANEL_UNSAFE_CSS = `
 }
 
 [data-file-info] {
+  padding: var(--diff-panel-file-info-padding, 10px) !important;
   background-color: color-mix(in srgb, var(--card) 94%, var(--foreground)) !important;
   border-block-color: var(--border) !important;
   color: var(--foreground) !important;
@@ -87,8 +104,16 @@ const DIFF_PANEL_UNSAFE_CSS = `
   position: sticky !important;
   top: 0;
   z-index: 4;
+  min-height: calc(1lh + (var(--diffs-gap-block, 8px) * 2.25)) !important;
+  padding-inline: var(--diff-panel-header-padding-inline, 12px) !important;
   background-color: color-mix(in srgb, var(--card) 94%, var(--foreground)) !important;
   border-bottom: 1px solid var(--border) !important;
+}
+
+[data-line],
+[data-column-number],
+[data-no-newline] {
+  padding-inline: var(--diff-panel-line-padding-inline, 1ch) !important;
 }
 
 [data-title] {
@@ -107,6 +132,62 @@ const DIFF_PANEL_UNSAFE_CSS = `
 }
 `;
 
+const DIFF_SIZE_LABELS: Record<DiffSizeOption, string> = {
+	compact: "Tight",
+	balanced: "Balanced",
+	comfortable: "Large",
+};
+
+const DIFF_SIZE_TOKENS: Record<
+	DiffSizeOption,
+	{
+		fileInfoPadding: number;
+		fontSize: number;
+		gapBlock: number;
+		gapInline: number;
+		headerPaddingInline: number;
+		lineHeight: number;
+		linePaddingInline: number;
+		minNumberWidth: number;
+	}
+> = {
+	compact: {
+		fileInfoPadding: 8,
+		fontSize: 11.5,
+		gapBlock: 6,
+		gapInline: 6,
+		headerPaddingInline: 10,
+		lineHeight: 17.5,
+		linePaddingInline: 0.8,
+		minNumberWidth: 2.25,
+	},
+	balanced: {
+		fileInfoPadding: 9,
+		fontSize: 12.25,
+		gapBlock: 7.5,
+		gapInline: 7.5,
+		headerPaddingInline: 11,
+		lineHeight: 18.75,
+		linePaddingInline: 0.92,
+		minNumberWidth: 2.6,
+	},
+	comfortable: {
+		fileInfoPadding: 10,
+		fontSize: 13.25,
+		gapBlock: 9,
+		gapInline: 9,
+		headerPaddingInline: 12,
+		lineHeight: 20.5,
+		linePaddingInline: 1.05,
+		minNumberWidth: 3,
+	},
+};
+
+const DIFF_FORCE_WRAP_BREAKPOINT = 760;
+const DIFF_FORCE_STACKED_BREAKPOINT = 960;
+const DIFF_FORCE_HIDE_LINE_NUMBERS_BREAKPOINT = 560;
+const DIFF_SIDEBAR_NAV_BREAKPOINT = 1060;
+
 type RenderablePatch =
 	| {
 			kind: "files";
@@ -114,9 +195,18 @@ type RenderablePatch =
 	  }
 	| {
 			kind: "raw";
-			text: string;
 			reason: string;
+			text: string;
 	  };
+
+interface DiffFileItem {
+	additions: number;
+	deletions: number;
+	directory: string;
+	name: string;
+	path: string;
+	type: FileDiffMetadata["type"];
+}
 
 function getRenderablePatch(
 	patch: string | undefined,
@@ -169,6 +259,52 @@ function formatTurnChipTimestamp(isoDate: string): string {
 	}).format(new Date(isoDate));
 }
 
+function summarizeFileDiff(fileDiff: FileDiffMetadata): {
+	additions: number;
+	deletions: number;
+} {
+	return fileDiff.hunks.reduce(
+		(acc, hunk) => ({
+			additions: acc.additions + hunk.additionLines,
+			deletions: acc.deletions + hunk.deletionLines,
+		}),
+		{ additions: 0, deletions: 0 },
+	);
+}
+
+function buildDiffFileItem(fileDiff: FileDiffMetadata): DiffFileItem {
+	const path = resolveFileDiffPath(fileDiff);
+	const lastSlashIndex = path.lastIndexOf("/");
+	const { additions, deletions } = summarizeFileDiff(fileDiff);
+
+	return {
+		additions,
+		deletions,
+		directory: lastSlashIndex >= 0 ? path.slice(0, lastSlashIndex) : "",
+		name: lastSlashIndex >= 0 ? path.slice(lastSlashIndex + 1) : path,
+		path,
+		type: fileDiff.type,
+	};
+}
+
+function matchDiffFile(item: DiffFileItem, normalizedQuery: string): boolean {
+	if (normalizedQuery.length === 0) {
+		return true;
+	}
+	return `${item.path} ${item.type}`.toLowerCase().includes(normalizedQuery);
+}
+
+function scrollToDiffFileInViewport(
+	viewport: HTMLDivElement | null,
+	filePath: string,
+): void {
+	if (!viewport) return;
+	const target = Array.from(
+		viewport.querySelectorAll<HTMLElement>("[data-diff-file-path]"),
+	).find((element) => element.dataset.diffFilePath === filePath);
+	target?.scrollIntoView({ block: "nearest" });
+}
+
 interface DiffPanelProps {
 	mode?: "inline" | "sheet" | "sidebar";
 }
@@ -178,9 +314,13 @@ export { DiffWorkerPoolProvider } from "./DiffWorkerPoolProvider";
 export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
 	const navigate = useNavigate();
 	const { resolvedTheme } = useTheme();
+	const { settings, updateUISettings } = useUISettings();
 	const [diffRenderMode, setDiffRenderMode] =
 		useState<DiffRenderMode>("stacked");
+	const [fileQuery, setFileQuery] = useState("");
+	const [panelWidth, setPanelWidth] = useState(0);
 	const patchViewportRef = useRef<HTMLDivElement>(null);
+	const panelRef = useRef<HTMLDivElement>(null);
 	const turnStripRef = useRef<HTMLDivElement>(null);
 	const [canScrollTurnStripLeft, setCanScrollTurnStripLeft] = useState(false);
 	const [canScrollTurnStripRight, setCanScrollTurnStripRight] = useState(false);
@@ -230,8 +370,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
 	);
 
 	const selectedTurnId = diffSearch.diffTurnId ?? null;
-	const selectedFilePath =
-		selectedTurnId !== null ? (diffSearch.diffFilePath ?? null) : null;
+	const selectedFilePath = diffSearch.diffFilePath ?? null;
 	const selectedTurn =
 		selectedTurnId === null
 			? undefined
@@ -334,18 +473,124 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
 			),
 		);
 	}, [renderablePatch]);
+	const diffFileItems = useMemo(
+		() => renderableFiles.map(buildDiffFileItem),
+		[renderableFiles],
+	);
+	const normalizedFileQuery = fileQuery.trim().toLowerCase();
+	const visibleDiffFileItems = useMemo(
+		() =>
+			diffFileItems.filter((item) => matchDiffFile(item, normalizedFileQuery)),
+		[diffFileItems, normalizedFileQuery],
+	);
+	const visibleFilePathSet = useMemo(
+		() => new Set(visibleDiffFileItems.map((item) => item.path)),
+		[visibleDiffFileItems],
+	);
+	const visibleRenderableFiles = useMemo(() => {
+		if (normalizedFileQuery.length === 0) {
+			return renderableFiles;
+		}
+		return renderableFiles.filter((fileDiff) =>
+			visibleFilePathSet.has(resolveFileDiffPath(fileDiff)),
+		);
+	}, [normalizedFileQuery.length, renderableFiles, visibleFilePathSet]);
+	const visibleFileStats = useMemo(
+		() =>
+			visibleDiffFileItems.reduce(
+				(acc, item) => ({
+					additions: acc.additions + item.additions,
+					deletions: acc.deletions + item.deletions,
+				}),
+				{ additions: 0, deletions: 0 },
+			),
+		[visibleDiffFileItems],
+	);
+	const shouldForceWrap =
+		panelWidth > 0 && panelWidth < DIFF_FORCE_WRAP_BREAKPOINT;
+	const shouldForceStacked =
+		panelWidth > 0 && panelWidth < DIFF_FORCE_STACKED_BREAKPOINT;
+	const shouldForceHideLineNumbers =
+		panelWidth > 0 && panelWidth < DIFF_FORCE_HIDE_LINE_NUMBERS_BREAKPOINT;
+	const effectiveDiffRenderMode = shouldForceStacked
+		? "stacked"
+		: diffRenderMode;
+	const effectiveWrap = shouldForceWrap || settings.diffWrap;
+	const effectiveShowLineNumbers =
+		!shouldForceHideLineNumbers && settings.diffShowLineNumbers;
+	const canShowFileNavigator =
+		settings.diffShowFileNavigator && visibleDiffFileItems.length > 1;
+	const showSidebarNavigator =
+		canShowFileNavigator && panelWidth >= DIFF_SIDEBAR_NAV_BREAKPOINT;
+	const showStripNavigator = canShowFileNavigator && !showSidebarNavigator;
+	const diffSurfaceStyle = useMemo(() => {
+		const preset = DIFF_SIZE_TOKENS[settings.diffSize];
+		const widthScale =
+			panelWidth > 0 && panelWidth < DIFF_FORCE_HIDE_LINE_NUMBERS_BREAKPOINT
+				? 0.94
+				: panelWidth > 0 && panelWidth < DIFF_FORCE_STACKED_BREAKPOINT
+					? 0.98
+					: 1;
+
+		return {
+			"--diff-panel-file-info-padding": `${Math.max(
+				7,
+				preset.fileInfoPadding * widthScale,
+			)}px`,
+			"--diff-panel-font-size": `${(preset.fontSize * widthScale).toFixed(
+				2,
+			)}px`,
+			"--diff-panel-gap-block": `${(preset.gapBlock * widthScale).toFixed(
+				2,
+			)}px`,
+			"--diff-panel-gap-inline": `${(preset.gapInline * widthScale).toFixed(
+				2,
+			)}px`,
+			"--diff-panel-header-padding-inline": `${Math.max(
+				9,
+				preset.headerPaddingInline * widthScale,
+			)}px`,
+			"--diff-panel-line-height": `${(preset.lineHeight * widthScale).toFixed(
+				2,
+			)}px`,
+			"--diff-panel-line-padding-inline": `${(
+				preset.linePaddingInline * widthScale
+			).toFixed(2)}ch`,
+			"--diff-panel-min-number-width": `${(
+				preset.minNumberWidth * widthScale
+			).toFixed(2)}ch`,
+		} as CSSProperties;
+	}, [panelWidth, settings.diffSize]);
 
 	useEffect(() => {
-		if (!selectedFilePath || !patchViewportRef.current) {
+		const element = panelRef.current;
+		if (!element) return;
+
+		const updatePanelWidth = () => {
+			setPanelWidth((current) => {
+				const next = Math.round(element.clientWidth);
+				return current === next ? current : next;
+			});
+		};
+
+		updatePanelWidth();
+		const resizeObserver = new ResizeObserver(updatePanelWidth);
+		resizeObserver.observe(element);
+		return () => {
+			resizeObserver.disconnect();
+		};
+	}, []);
+
+	const scrollToDiffFile = useCallback((filePath: string) => {
+		scrollToDiffFileInViewport(patchViewportRef.current, filePath);
+	}, []);
+
+	useEffect(() => {
+		if (!selectedFilePath) {
 			return;
 		}
-		const target = Array.from(
-			patchViewportRef.current.querySelectorAll<HTMLElement>(
-				"[data-diff-file-path]",
-			),
-		).find((element) => element.dataset.diffFilePath === selectedFilePath);
-		target?.scrollIntoView({ block: "nearest" });
-	}, [selectedFilePath]);
+		scrollToDiffFile(selectedFilePath);
+	}, [scrollToDiffFile, selectedFilePath]);
 
 	const openDiffFileInEditor = useCallback(
 		(filePath: string) => {
@@ -361,6 +606,34 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
 				});
 		},
 		[activeCwd],
+	);
+
+	const updateSelectedFilePath = useCallback(
+		(filePath: string | null) => {
+			if (!activeThread) return;
+			void navigate({
+				to: "/$threadId",
+				params: { threadId: activeThread.id },
+				search: (previous) => {
+					const rest = stripDiffSearchParams(previous);
+					return {
+						...rest,
+						diff: "1",
+						...(selectedTurn ? { diffTurnId: selectedTurn.turnId } : {}),
+						...(filePath ? { diffFilePath: filePath } : {}),
+					};
+				},
+			});
+		},
+		[activeThread, navigate, selectedTurn],
+	);
+
+	const selectDiffFile = useCallback(
+		(filePath: string) => {
+			scrollToDiffFile(filePath);
+			updateSelectedFilePath(filePath);
+		},
+		[scrollToDiffFile, updateSelectedFilePath],
 	);
 
 	const selectTurn = (turnId: TurnId) => {
@@ -455,16 +728,23 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
 		if (!element) return;
 
 		const selectedChip = element.querySelector<HTMLElement>(
-			"[data-turn-chip-selected='true']",
+			`[data-turn-chip-key="${CSS.escape(selectedTurn?.turnId ?? "__all__")}"]`,
 		);
 		selectedChip?.scrollIntoView({
 			block: "nearest",
 			inline: "nearest",
 			behavior: "smooth",
 		});
-	}, []);
+	}, [selectedTurn]);
 
 	const shouldUseDragRegion = isDesktopShell && mode !== "sheet";
+	const selectionLabel = selectedTurn
+		? `Turn ${
+				selectedTurn.checkpointTurnCount ??
+				inferredCheckpointTurnCountByTurnId[selectedTurn.turnId] ??
+				"?"
+			}`
+		: "Conversation";
 	const headerRow = (
 		<>
 			<div className="relative min-w-0 flex-1 [-webkit-app-region:no-drag]">
@@ -511,6 +791,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
 						type="button"
 						className="shrink-0 rounded-md"
 						onClick={selectWholeConversation}
+						data-turn-chip-key="__all__"
 						data-turn-chip-selected={selectedTurnId === null}
 					>
 						<div
@@ -532,6 +813,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
 							type="button"
 							className="shrink-0 rounded-md"
 							onClick={() => selectTurn(summary.turnId)}
+							data-turn-chip-key={summary.turnId}
 							title={summary.turnId}
 							data-turn-chip-selected={summary.turnId === selectedTurn?.turnId}
 						>
@@ -574,21 +856,25 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
 				<Toggle aria-label="Stacked diff view" value="stacked">
 					<Rows3Icon className="size-3" />
 				</Toggle>
-				<Toggle aria-label="Split diff view" value="split">
+				<Toggle
+					aria-label="Split diff view"
+					disabled={shouldForceStacked}
+					value="split"
+				>
 					<Columns2Icon className="size-3" />
 				</Toggle>
 			</ToggleGroup>
 		</>
 	);
 	const headerRowClassName = cn(
-		"flex items-center justify-between gap-2 px-4",
-		shouldUseDragRegion
-			? "drag-region h-[52px] border-b border-border"
-			: "h-12",
+		"flex min-h-12 flex-wrap items-center justify-between gap-2 px-3 py-2 md:px-4",
+		shouldUseDragRegion ? "drag-region border-b border-border" : "",
 	);
 
 	return (
 		<div
+			ref={panelRef}
+			style={diffSurfaceStyle}
 			className={cn(
 				"flex h-full min-w-0 flex-col bg-background",
 				mode === "inline"
@@ -623,7 +909,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
 					className="diff-panel-viewport min-h-0 min-w-0 flex-1 overflow-hidden"
 				>
 					{checkpointDiffError && !renderablePatch && (
-						<div className="px-3">
+						<div className="px-3 pt-3">
 							<p className="mb-2 text-[11px] text-red-500/80">
 								{checkpointDiffError}
 							</p>
@@ -640,51 +926,281 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
 							</p>
 						</div>
 					) : renderablePatch.kind === "files" ? (
-						<Virtualizer
-							className="diff-render-surface h-full min-h-0 overflow-auto px-2 pb-2"
-							config={{
-								overscrollSize: 600,
-								intersectionObserverMargin: 1200,
-							}}
-						>
-							{renderableFiles.map((fileDiff) => {
-								const filePath = resolveFileDiffPath(fileDiff);
-								const fileKey = buildFileDiffRenderKey(fileDiff);
-								const themedFileKey = `${fileKey}:${resolvedTheme}`;
-								return (
-									<div
-										key={themedFileKey}
-										data-diff-file-path={filePath}
-										className="diff-render-file mb-2 rounded-md first:mt-2 last:mb-0"
-										onClickCapture={(event) => {
-											const nativeEvent = event.nativeEvent as MouseEvent;
-											const composedPath = nativeEvent.composedPath?.() ?? [];
-											const clickedHeader = composedPath.some((node) => {
-												if (!(node instanceof Element)) return false;
-												return node.hasAttribute("data-title");
-											});
-											if (!clickedHeader) return;
-											openDiffFileInEditor(filePath);
-										}}
-									>
-										<FileDiff
-											fileDiff={fileDiff}
-											options={{
-												diffStyle:
-													diffRenderMode === "split" ? "split" : "unified",
-												lineDiffType: "none",
-												theme: resolveDiffThemeName(resolvedTheme),
-												themeType: resolvedTheme as DiffThemeType,
-												unsafeCSS: DIFF_PANEL_UNSAFE_CSS,
-											}}
+						<div className="flex h-full min-h-0 flex-col gap-2 p-2">
+							<div className="rounded-xl border border-border/70 bg-card/42 px-3 py-2">
+								<div className="flex flex-wrap items-center gap-2">
+									<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground/72">
+										<span className="rounded-full border border-border/70 bg-background/75 px-2 py-0.5 font-medium text-foreground/88">
+											{selectionLabel}
+										</span>
+										<span>
+											{normalizedFileQuery.length > 0
+												? `${visibleDiffFileItems.length} of ${diffFileItems.length} files`
+												: `${diffFileItems.length} files`}
+										</span>
+										<span className="font-medium text-emerald-500/90">
+											+{visibleFileStats.additions}
+										</span>
+										<span className="font-medium text-rose-500/90">
+											-{visibleFileStats.deletions}
+										</span>
+										{shouldForceStacked && (
+											<span>
+												Split view collapses automatically on narrow panels.
+											</span>
+										)}
+										{!shouldForceStacked && shouldForceWrap && (
+											<span>
+												Wrapping is enabled automatically on narrow panels.
+											</span>
+										)}
+										{shouldForceHideLineNumbers && (
+											<span>
+												Line numbers hide automatically on the smallest widths.
+											</span>
+										)}
+									</div>
+									<div className="flex flex-wrap items-center gap-1.5">
+										<Toggle
+											aria-label="Toggle changed files navigator"
+											pressed={settings.diffShowFileNavigator}
+											size="xs"
+											variant="outline"
+											onPressedChange={(pressed) =>
+												updateUISettings({
+													diffShowFileNavigator: pressed,
+												})
+											}
+										>
+											Files
+										</Toggle>
+										<Toggle
+											aria-label="Wrap long lines"
+											disabled={shouldForceWrap}
+											pressed={settings.diffWrap}
+											size="xs"
+											variant="outline"
+											onPressedChange={(pressed) =>
+												updateUISettings({ diffWrap: pressed })
+											}
+										>
+											Wrap
+										</Toggle>
+										<Toggle
+											aria-label="Show line numbers"
+											disabled={shouldForceHideLineNumbers}
+											pressed={settings.diffShowLineNumbers}
+											size="xs"
+											variant="outline"
+											onPressedChange={(pressed) =>
+												updateUISettings({
+													diffShowLineNumbers: pressed,
+												})
+											}
+										>
+											Lines
+										</Toggle>
+									</div>
+								</div>
+								<div className="mt-2 flex flex-col gap-2 lg:flex-row lg:items-center">
+									<div className="relative min-w-0 flex-1">
+										<SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/60" />
+										<Input
+											aria-label="Filter changed files"
+											className="rounded-lg pl-8"
+											nativeInput
+											placeholder="Filter changed files"
+											size="sm"
+											type="search"
+											value={fileQuery}
+											onChange={(event) => setFileQuery(event.target.value)}
 										/>
 									</div>
-								);
-							})}
-						</Virtualizer>
+									<ToggleGroup
+										className="shrink-0"
+										size="xs"
+										variant="outline"
+										value={[settings.diffSize]}
+										onValueChange={(value) => {
+											const next = value[0];
+											if (DIFF_SIZE_OPTIONS.includes(next as DiffSizeOption)) {
+												updateUISettings({
+													diffSize: next as DiffSizeOption,
+												});
+											}
+										}}
+									>
+										{DIFF_SIZE_OPTIONS.map((option) => (
+											<Toggle
+												key={option}
+												aria-label={`${DIFF_SIZE_LABELS[option]} diff sizing`}
+												value={option}
+											>
+												{DIFF_SIZE_LABELS[option]}
+											</Toggle>
+										))}
+									</ToggleGroup>
+								</div>
+							</div>
+
+							{showStripNavigator && (
+								<div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+									<div className="flex w-max gap-1.5 px-0.5">
+										{visibleDiffFileItems.map((item) => (
+											<button
+												key={item.path}
+												type="button"
+												className={cn(
+													"flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left transition-colors",
+													selectedFilePath === item.path
+														? "border-primary/70 bg-primary/10 text-foreground"
+														: "border-border/70 bg-card/32 text-muted-foreground hover:border-border hover:text-foreground",
+												)}
+												onClick={() => selectDiffFile(item.path)}
+												title={item.path}
+											>
+												<div className="min-w-0">
+													<div className="max-w-48 truncate text-[11px] font-medium text-inherit">
+														{item.name}
+													</div>
+													{item.directory.length > 0 && (
+														<div className="max-w-48 truncate text-[10px] text-muted-foreground/70">
+															{item.directory}
+														</div>
+													)}
+												</div>
+												<div className="flex items-center gap-1 text-[10px] font-medium tabular-nums">
+													<span className="text-emerald-500/90">
+														+{item.additions}
+													</span>
+													<span className="text-rose-500/90">
+														-{item.deletions}
+													</span>
+												</div>
+											</button>
+										))}
+									</div>
+								</div>
+							)}
+
+							<div
+								className={cn(
+									"min-h-0 flex-1 overflow-hidden",
+									showSidebarNavigator
+										? "grid grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)] gap-2"
+										: "flex flex-col",
+								)}
+							>
+								{showSidebarNavigator && (
+									<aside className="min-h-0 overflow-hidden rounded-xl border border-border/70 bg-card/36">
+										<div className="border-b border-border/70 px-3 py-2 text-[11px] font-medium tracking-[0.12em] text-muted-foreground/68 uppercase">
+											Changed files
+										</div>
+										<div className="min-h-0 overflow-auto p-2">
+											<div className="space-y-1">
+												{visibleDiffFileItems.map((item) => (
+													<button
+														key={item.path}
+														type="button"
+														className={cn(
+															"flex w-full items-start justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition-colors",
+															selectedFilePath === item.path
+																? "bg-primary/10 text-foreground ring-1 ring-primary/45"
+																: "text-muted-foreground hover:bg-accent/65 hover:text-foreground",
+														)}
+														onClick={() => selectDiffFile(item.path)}
+														title={item.path}
+													>
+														<div className="min-w-0 flex-1">
+															<div className="truncate text-[12px] font-medium">
+																{item.name}
+															</div>
+															<div className="truncate text-[10px] text-muted-foreground/72">
+																{item.directory || item.type}
+															</div>
+														</div>
+														<div className="flex shrink-0 items-center gap-1 text-[10px] font-medium tabular-nums">
+															<span className="text-emerald-500/90">
+																+{item.additions}
+															</span>
+															<span className="text-rose-500/90">
+																-{item.deletions}
+															</span>
+														</div>
+													</button>
+												))}
+											</div>
+										</div>
+									</aside>
+								)}
+
+								<div className="min-h-0 overflow-hidden rounded-xl border border-border/70 bg-background/55">
+									{visibleRenderableFiles.length === 0 ? (
+										<div className="flex h-full items-center justify-center px-4 text-center text-xs text-muted-foreground/70">
+											No changed files match this filter.
+										</div>
+									) : (
+										<Virtualizer
+											className="diff-render-surface h-full min-h-0 overflow-auto px-2 pb-2"
+											config={{
+												intersectionObserverMargin: 1200,
+												overscrollSize: 600,
+											}}
+										>
+											{visibleRenderableFiles.map((fileDiff) => {
+												const filePath = resolveFileDiffPath(fileDiff);
+												const fileKey = buildFileDiffRenderKey(fileDiff);
+												const themedFileKey = `${fileKey}:${resolvedTheme}`;
+												return (
+													<div
+														key={themedFileKey}
+														data-diff-file-path={filePath}
+														className={cn(
+															"diff-render-file mb-2 rounded-lg first:mt-2 last:mb-0",
+															selectedFilePath === filePath &&
+																"ring-1 ring-primary/40",
+														)}
+														onClickCapture={(event) => {
+															const nativeEvent =
+																event.nativeEvent as MouseEvent;
+															const composedPath =
+																nativeEvent.composedPath?.() ?? [];
+															const clickedHeader = composedPath.some(
+																(node) => {
+																	if (!(node instanceof Element)) return false;
+																	return node.hasAttribute("data-title");
+																},
+															);
+															if (!clickedHeader) return;
+															openDiffFileInEditor(filePath);
+														}}
+													>
+														<FileDiff
+															fileDiff={fileDiff}
+															options={{
+																diffStyle:
+																	effectiveDiffRenderMode === "split"
+																		? "split"
+																		: "unified",
+																disableLineNumbers: !effectiveShowLineNumbers,
+																lineDiffType: "none",
+																overflow: effectiveWrap ? "wrap" : "scroll",
+																theme: resolveDiffThemeName(resolvedTheme),
+																themeType: resolvedTheme as DiffThemeType,
+																unsafeCSS: DIFF_PANEL_UNSAFE_CSS,
+															}}
+														/>
+													</div>
+												);
+											})}
+										</Virtualizer>
+									)}
+								</div>
+							</div>
+						</div>
 					) : (
 						<div className="h-full overflow-auto p-2">
-							<div className="space-y-2">
+							<div className="space-y-2 rounded-xl border border-border/70 bg-card/36 p-3">
 								<p className="text-[11px] text-muted-foreground/75">
 									{renderablePatch.reason}
 								</p>

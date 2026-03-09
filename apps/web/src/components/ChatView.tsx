@@ -79,7 +79,6 @@ import {
 import {
 	type ComposerImageAttachment,
 	type DraftThreadEnvMode,
-	type DraftThreadState,
 	type PersistedComposerImageAttachment,
 	useComposerDraftStore,
 	useComposerThreadDraft,
@@ -90,6 +89,7 @@ import {
 } from "../diffRouteSearch";
 import { isDesktopShell } from "../env";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { isSpeechRecognitionSupported } from "../hooks/useSpeechRecognition";
 import { useTheme } from "../hooks/useTheme";
 import { useTurnDiffSummaries } from "../hooks/useTurnDiffSummaries";
 import {
@@ -126,6 +126,7 @@ import {
 	selectThreadTerminalState,
 	useTerminalStateStore,
 } from "../terminalStateStore";
+import { buildLocalDraftThread } from "../threadDrafts";
 import { truncateTitle } from "../truncateTitle";
 import {
 	type ChatMessage,
@@ -133,7 +134,6 @@ import {
 	DEFAULT_RUNTIME_MODE,
 	DEFAULT_THREAD_TERMINAL_ID,
 	MAX_THREAD_TERMINAL_COUNT,
-	type Thread,
 	type TurnDiffSummary,
 } from "../types";
 import { basenameOfPath } from "../vscode-icons";
@@ -185,34 +185,6 @@ function readLastInvokedScriptByProjectFromStorage(): Record<string, string> {
 	} catch {
 		return {};
 	}
-}
-
-function buildLocalDraftThread(
-	threadId: ThreadId,
-	draftThread: DraftThreadState,
-	fallbackModel: string,
-	error: string | null,
-): Thread {
-	return {
-		id: threadId,
-		codexThreadId: null,
-		projectId: draftThread.projectId,
-		title: "New thread",
-		model: fallbackModel,
-		runtimeMode: draftThread.runtimeMode,
-		interactionMode: draftThread.interactionMode,
-		session: null,
-		messages: [],
-		error,
-		createdAt: draftThread.createdAt,
-		latestTurn: null,
-		lastVisitedAt: draftThread.createdAt,
-		branch: draftThread.branch,
-		worktreePath: draftThread.worktreePath,
-		turnDiffSummaries: [],
-		activities: [],
-		proposedPlans: [],
-	};
 }
 
 function revokeBlobPreviewUrl(previewUrl: string | undefined): void {
@@ -1351,6 +1323,30 @@ export default function ChatView({ threadId }: ChatViewProps) {
 	const focusComposer = useCallback(() => {
 		composerEditorRef.current?.focusAtEnd();
 	}, []);
+
+	const handleAppendToPrompt = useCallback(
+		(text: string) => {
+			if (isComposerApprovalState || !text.trim()) return;
+			const current = promptRef.current;
+			const trimmed = text.trim();
+			const needSpace =
+				current.length > 0 &&
+				!/\s$/.test(current) &&
+				trimmed.length > 0 &&
+				!/^\s/.test(trimmed);
+			const newPrompt = current + (needSpace ? " " : "") + trimmed;
+			const newCursor = newPrompt.length;
+			promptRef.current = newPrompt;
+			setPrompt(newPrompt);
+			setComposerCursor(newCursor);
+			setComposerTrigger(detectComposerTrigger(newPrompt, newCursor) ?? null);
+			window.requestAnimationFrame(() => {
+				composerEditorRef.current?.focusAtEnd();
+			});
+		},
+		[isComposerApprovalState, setPrompt],
+	);
+
 	const scheduleComposerFocus = useCallback(() => {
 		window.requestAnimationFrame(() => {
 			focusComposer();
@@ -3737,6 +3733,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 						onTouchEnd={onMessagesTouchEnd}
 						hasMessages={timelineEntries.length > 0}
 						isWorking={isWorking}
+						activeProvider={activeProvider}
 						activeTurnInProgress={isWorking || !latestTurnSettled}
 						activeTurnStartedAt={activeWorkStartedAt}
 						scrollContainer={messagesScrollElement}
@@ -3871,6 +3868,8 @@ export default function ChatView({ threadId }: ChatViewProps) {
 							});
 						}}
 						onAdvanceActivePendingUserInput={onAdvanceActivePendingUserInput}
+						onAppendToPrompt={handleAppendToPrompt}
+						isVoiceInputSupported={isSpeechRecognitionSupported()}
 					/>
 				</div>
 
