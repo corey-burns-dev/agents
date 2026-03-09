@@ -13,6 +13,7 @@ import {
 	type ProviderAdapterError,
 	ProviderUnsupportedError,
 } from "../Errors.ts";
+import { ClaudeCodeAdapter } from "../Services/ClaudeCodeAdapter.ts";
 import { CodexAdapter } from "../Services/CodexAdapter.ts";
 import { GeminiAdapter } from "../Services/GeminiAdapter.ts";
 import type { ProviderAdapterShape } from "../Services/ProviderAdapter.ts";
@@ -32,7 +33,7 @@ const makeProviderAdapterRegistry = (
 		const adapters =
 			options?.adapters !== undefined
 				? options.adapters
-				: [yield* CodexAdapter, yield* GeminiAdapter];
+				: [yield* CodexAdapter, yield* GeminiAdapter, yield* ClaudeCodeAdapter];
 		const byProvider = new Map(
 			adapters.map((adapter) => [adapter.provider, adapter]),
 		);

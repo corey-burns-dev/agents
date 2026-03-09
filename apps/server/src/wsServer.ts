@@ -234,7 +234,11 @@ export const createServer = Effect.fn(function* (): Effect.fn.Return<
 		),
 	);
 
-	const providerStatuses = yield* providerHealth.getStatuses;
+	// Read lazily so background health checks are reflected when they complete.
+	const providerStatusesRef = {
+		current: Effect.runSync(providerHealth.getStatuses),
+	};
+	const getProviderStatuses = () => providerStatusesRef.current;
 
 	const clients = yield* Ref.make(new Set<WebSocket>());
 	const logger = createLogger("ws");
@@ -675,7 +679,7 @@ export const createServer = Effect.fn(function* (): Effect.fn.Return<
 		cwd,
 		keybindingsConfigPath,
 		availableEditors,
-		providerStatuses,
+		getProviderStatuses,
 		keybindingsManager,
 	});
 
@@ -696,10 +700,22 @@ export const createServer = Effect.fn(function* (): Effect.fn.Return<
 			channel: WS_CHANNELS.serverConfigUpdated,
 			data: {
 				issues: event.issues,
-				providers: providerStatuses,
+				providers: getProviderStatuses(),
 			},
 		}),
 	).pipe(Effect.forkIn(subscriptionsScope));
+
+	// Push updated provider statuses to connected clients when health checks complete.
+	providerHealth.onReady((statuses) => {
+		providerStatusesRef.current = statuses;
+		broadcastPush({
+			type: "push",
+			channel: WS_CHANNELS.serverConfigUpdated,
+			data: { issues: [], providers: statuses },
+		})
+			.pipe(Effect.runPromise)
+			.catch(() => {});
+	});
 
 	yield* Scope.provide(orchestrationReactor.start, subscriptionsScope);
 

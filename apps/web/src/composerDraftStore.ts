@@ -8,9 +8,11 @@ import {
 	type RuntimeMode,
 	type ThreadId,
 } from "@agents/contracts";
-import { normalizeModelSlug } from "@agents/shared/model";
+import { isProviderKind, normalizeModelSlug } from "@agents/shared/model";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+
+import { DebouncedStorage } from "./debouncedStorage";
 import {
 	type ChatImageAttachment,
 	DEFAULT_INTERACTION_MODE,
@@ -18,6 +20,23 @@ import {
 } from "./types";
 
 export const COMPOSER_DRAFT_STORAGE_KEY = "agents:composer-drafts:v1";
+
+const COMPOSER_DRAFT_DEBOUNCE_MS = 300;
+
+const composerDraftDebouncedStorage =
+	typeof localStorage !== "undefined"
+		? new DebouncedStorage(localStorage, {
+				debounceMs: COMPOSER_DRAFT_DEBOUNCE_MS,
+			})
+		: null;
+
+/**
+ * Flush pending composer draft writes to localStorage. Call before reading back
+ * (e.g. syncPersistedAttachments) or rely on beforeunload for page unload.
+ */
+export function flushComposerDraftStorage(): void {
+	composerDraftDebouncedStorage?.flush();
+}
 export type DraftThreadEnvMode = "local" | "worktree";
 
 export interface PersistedComposerImageAttachment {
@@ -259,7 +278,7 @@ function applyDraftFieldUpdate<K extends keyof ComposerThreadDraftState>(
 }
 
 function normalizeProviderKind(value: unknown): ProviderKind | null {
-	return value === "codex" || value === "gemini" ? value : null;
+	return isProviderKind(value) ? value : null;
 }
 
 function revokeObjectPreviewUrl(previewUrl: string): void {
@@ -1071,6 +1090,8 @@ export const useComposerDraftStore = create<ComposerDraftStoreState>()(
 						),
 					});
 				});
+				// Flush so the microtask read below sees the just-written state.
+				flushComposerDraftStorage();
 				Promise.resolve().then(() => {
 					const persistedIdSet = new Set(
 						readPersistedAttachmentIdsFromStorage(threadId),
@@ -1151,7 +1172,9 @@ export const useComposerDraftStore = create<ComposerDraftStoreState>()(
 		{
 			name: COMPOSER_DRAFT_STORAGE_KEY,
 			version: 1,
-			storage: createJSONStorage(() => localStorage),
+			storage: createJSONStorage(
+				() => composerDraftDebouncedStorage ?? localStorage,
+			),
 			partialize: (state) => {
 				const persistedDraftsByThreadId: PersistedComposerDraftStoreState["draftsByThreadId"] =
 					{};
@@ -1223,6 +1246,10 @@ export const useComposerDraftStore = create<ComposerDraftStoreState>()(
 		},
 	),
 );
+
+if (typeof window !== "undefined") {
+	window.addEventListener("beforeunload", flushComposerDraftStorage);
+}
 
 export function useComposerThreadDraft(
 	threadId: ThreadId,

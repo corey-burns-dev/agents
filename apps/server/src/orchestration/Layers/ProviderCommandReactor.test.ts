@@ -110,7 +110,9 @@ describe("ProviderCommandReactor", () => {
 				typeof input === "object" &&
 				input !== null &&
 				"provider" in input &&
-				(input.provider === "codex" || input.provider === "gemini")
+				(input.provider === "codex" ||
+					input.provider === "gemini" ||
+					input.provider === "claude-code")
 					? input.provider
 					: "codex";
 			const resumeCursor =
@@ -471,6 +473,83 @@ describe("ProviderCommandReactor", () => {
 		});
 		expect(harness.startSession.mock.calls[1]?.[1]).toMatchObject({
 			provider: "gemini",
+			resumeCursor: { opaque: "cursor-1" },
+			runtimeMode: "approval-required",
+		});
+	});
+
+	it("restarts Claude Code sessions as Claude Code when runtime mode changes", async () => {
+		const harness = await createHarness();
+		const now = new Date().toISOString();
+
+		await Effect.runPromise(
+			harness.engine.dispatch({
+				type: "thread.runtime-mode.set",
+				commandId: CommandId.makeUnsafe("cmd-runtime-mode-set-claude-initial"),
+				threadId: ThreadId.makeUnsafe("thread-1"),
+				runtimeMode: "full-access",
+				createdAt: now,
+			}),
+		);
+
+		await Effect.runPromise(
+			harness.engine.dispatch({
+				type: "thread.turn.start",
+				commandId: CommandId.makeUnsafe("cmd-turn-start-claude-1"),
+				threadId: ThreadId.makeUnsafe("thread-1"),
+				message: {
+					messageId: asMessageId("user-message-claude-1"),
+					role: "user",
+					text: "first claude turn",
+					attachments: [],
+				},
+				provider: "claude-code",
+				model: "claude-sonnet-4-6",
+				interactionMode: DEFAULT_PROVIDER_INTERACTION_MODE,
+				runtimeMode: "full-access",
+				createdAt: now,
+			}),
+		);
+
+		await waitFor(() => harness.startSession.mock.calls.length === 1);
+		await waitFor(() => harness.sendTurn.mock.calls.length === 1);
+
+		await Effect.runPromise(
+			harness.engine.dispatch({
+				type: "thread.runtime-mode.set",
+				commandId: CommandId.makeUnsafe("cmd-runtime-mode-set-claude-next"),
+				threadId: ThreadId.makeUnsafe("thread-1"),
+				runtimeMode: "approval-required",
+				createdAt: now,
+			}),
+		);
+
+		await waitFor(() => harness.startSession.mock.calls.length === 2);
+
+		await Effect.runPromise(
+			harness.engine.dispatch({
+				type: "thread.turn.start",
+				commandId: CommandId.makeUnsafe("cmd-turn-start-claude-2"),
+				threadId: ThreadId.makeUnsafe("thread-1"),
+				message: {
+					messageId: asMessageId("user-message-claude-2"),
+					role: "user",
+					text: "second claude turn",
+					attachments: [],
+				},
+				interactionMode: DEFAULT_PROVIDER_INTERACTION_MODE,
+				runtimeMode: "approval-required",
+				createdAt: now,
+			}),
+		);
+
+		await waitFor(() => harness.sendTurn.mock.calls.length === 2);
+
+		expect(harness.startSession.mock.calls[0]?.[1]).toMatchObject({
+			provider: "claude-code",
+		});
+		expect(harness.startSession.mock.calls[1]?.[1]).toMatchObject({
+			provider: "claude-code",
 			resumeCursor: { opaque: "cursor-1" },
 			runtimeMode: "approval-required",
 		});

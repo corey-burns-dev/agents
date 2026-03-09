@@ -41,6 +41,11 @@ export const MODEL_OPTIONS_BY_PROVIDER = {
 		{ slug: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
 		{ slug: "auto-gemini-3", name: "Gemini 3 Auto" },
 	],
+	"claude-code": [
+		{ slug: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+		{ slug: "claude-opus-4-6", name: "Claude Opus 4.6" },
+		{ slug: "claude-haiku-4-5", name: "Claude Haiku 4.5" },
+	],
 } as const satisfies Record<ProviderKind, readonly ModelOption[]>;
 export type ModelOptionsByProvider = typeof MODEL_OPTIONS_BY_PROVIDER;
 
@@ -50,6 +55,7 @@ export type ModelSlug = BuiltInModelSlug | (string & {});
 export const DEFAULT_MODEL_BY_PROVIDER = {
 	codex: "gpt-5.4",
 	gemini: "gemini-2.5-pro",
+	"claude-code": "claude-sonnet-4-6",
 } as const satisfies Record<ProviderKind, ModelSlug>;
 
 export const MODEL_SLUG_ALIASES_BY_PROVIDER = {
@@ -68,14 +74,21 @@ export const MODEL_SLUG_ALIASES_BY_PROVIDER = {
 		auto: "auto-gemini-3",
 		"3-auto": "auto-gemini-3",
 	},
+	"claude-code": {
+		sonnet: "claude-sonnet-4-6",
+		opus: "claude-opus-4-6",
+		haiku: "claude-haiku-4-5",
+	},
 } as const satisfies Record<ProviderKind, Record<string, ModelSlug>>;
 
 export const REASONING_EFFORT_OPTIONS_BY_PROVIDER = {
 	codex: CODEX_REASONING_EFFORT_OPTIONS,
 	gemini: [],
+	"claude-code": [],
 } as const satisfies Record<ProviderKind, readonly CodexReasoningEffort[]>;
 
 export const DEFAULT_REASONING_EFFORT_BY_PROVIDER = {
 	codex: "high",
 	gemini: null,
+	"claude-code": null,
 } as const satisfies Record<ProviderKind, CodexReasoningEffort | null>;

@@ -6,6 +6,18 @@ export interface TurnDiffFileSummary {
 	readonly deletions: number;
 }
 
+interface ParsedHunk {
+	readonly additionLines: number;
+	readonly deletionLines: number;
+}
+interface ParsedFile {
+	readonly name: string;
+	readonly hunks: ReadonlyArray<ParsedHunk>;
+}
+interface ParsedPatch {
+	readonly files: ReadonlyArray<ParsedFile>;
+}
+
 export function parseTurnDiffFilesFromUnifiedDiff(
 	diff: string,
 ): ReadonlyArray<TurnDiffFileSummary> {
@@ -14,22 +26,25 @@ export function parseTurnDiffFilesFromUnifiedDiff(
 		return [];
 	}
 
-	const parsedPatches = parsePatchFiles(normalized);
-	const files = parsedPatches.flatMap((patch: any) =>
-		patch.files.map((file: any) => ({
+	const parsedPatches = parsePatchFiles(
+		normalized,
+	) as ReadonlyArray<ParsedPatch>;
+	const files = parsedPatches.flatMap((patch) =>
+		patch.files.map((file) => ({
 			path: file.name,
 			additions: file.hunks.reduce(
-				(total: number, hunk: any) => total + hunk.additionLines,
+				(total: number, hunk: ParsedHunk) => total + hunk.additionLines,
 				0,
 			),
 			deletions: file.hunks.reduce(
-				(total: number, hunk: any) => total + hunk.deletionLines,
+				(total: number, hunk: ParsedHunk) => total + hunk.deletionLines,
 				0,
 			),
 		})),
 	);
 
-	return files.toSorted((left: any, right: any) =>
-		left.path.localeCompare(right.path),
+	return files.toSorted(
+		(left: TurnDiffFileSummary, right: TurnDiffFileSummary) =>
+			left.path.localeCompare(right.path),
 	);
 }

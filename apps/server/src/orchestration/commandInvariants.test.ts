@@ -11,9 +11,12 @@ import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 
 import {
+	findProjectById,
 	findThreadById,
 	listThreadsByProjectId,
 	requireNonNegativeInteger,
+	requireProject,
+	requireProjectAbsent,
 	requireThread,
 	requireThreadAbsent,
 } from "./commandInvariants.ts";
@@ -103,6 +106,15 @@ const messageSendCommand: OrchestrationCommand = {
 };
 
 describe("commandInvariants", () => {
+	it("finds projects by id", () => {
+		expect(
+			findProjectById(readModel, ProjectId.makeUnsafe("project-a"))?.title,
+		).toBe("Project A");
+		expect(
+			findProjectById(readModel, ProjectId.makeUnsafe("missing")),
+		).toBeUndefined();
+	});
+
 	it("finds threads by id and project", () => {
 		expect(
 			findThreadById(readModel, ThreadId.makeUnsafe("thread-1"))?.projectId,
@@ -115,6 +127,61 @@ describe("commandInvariants", () => {
 				(thread) => thread.id,
 			),
 		).toEqual([ThreadId.makeUnsafe("thread-2")]);
+	});
+
+	it("requires existing project", async () => {
+		const project = await Effect.runPromise(
+			requireProject({
+				readModel,
+				command: messageSendCommand,
+				projectId: ProjectId.makeUnsafe("project-a"),
+			}),
+		);
+		expect(project.id).toBe(ProjectId.makeUnsafe("project-a"));
+
+		await expect(
+			Effect.runPromise(
+				requireProject({
+					readModel,
+					command: messageSendCommand,
+					projectId: ProjectId.makeUnsafe("missing"),
+				}),
+			),
+		).rejects.toThrow("does not exist");
+	});
+
+	it("requires missing project for create flows", async () => {
+		await Effect.runPromise(
+			requireProjectAbsent({
+				readModel,
+				command: {
+					type: "project.create",
+					commandId: CommandId.makeUnsafe("cmd-new"),
+					projectId: ProjectId.makeUnsafe("project-new"),
+					title: "New",
+					workspaceRoot: "/tmp/new",
+					createdAt: now,
+				},
+				projectId: ProjectId.makeUnsafe("project-new"),
+			}),
+		);
+
+		await expect(
+			Effect.runPromise(
+				requireProjectAbsent({
+					readModel,
+					command: {
+						type: "project.create",
+						commandId: CommandId.makeUnsafe("cmd-dup"),
+						projectId: ProjectId.makeUnsafe("project-a"),
+						title: "Dup",
+						workspaceRoot: "/tmp/dup",
+						createdAt: now,
+					},
+					projectId: ProjectId.makeUnsafe("project-a"),
+				}),
+			),
+		).rejects.toThrow("already exists");
 	});
 
 	it("requires existing thread", async () => {

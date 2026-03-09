@@ -9,6 +9,8 @@ import {
 	getDefaultReasoningEffort,
 	getModelOptions,
 	getReasoningEffortOptions,
+	inferProviderKindForModel,
+	isProviderKind,
 	normalizeModelSlug,
 	resolveModelSlug,
 } from "./model";
@@ -58,6 +60,28 @@ describe("resolveModelSlug", () => {
 	it("keeps codex defaults for backward compatibility", () => {
 		expect(getDefaultModel()).toBe(DEFAULT_MODEL_BY_PROVIDER.codex);
 		expect(getModelOptions()).toEqual(MODEL_OPTIONS_BY_PROVIDER.codex);
+	});
+});
+
+describe("isProviderKind", () => {
+	it("accepts every supported provider", () => {
+		expect(isProviderKind("codex")).toBe(true);
+		expect(isProviderKind("gemini")).toBe(true);
+		expect(isProviderKind("claude-code")).toBe(true);
+		expect(isProviderKind("cursor")).toBe(false);
+	});
+});
+
+describe("inferProviderKindForModel", () => {
+	it("detects the provider from built-in model slugs", () => {
+		expect(inferProviderKindForModel("gpt-5.4")).toBe("codex");
+		expect(inferProviderKindForModel("gemini-2.5-pro")).toBe("gemini");
+		expect(inferProviderKindForModel("claude-opus-4-6")).toBe("claude-code");
+	});
+
+	it("falls back to codex when the model is unknown", () => {
+		expect(inferProviderKindForModel("custom/internal-model")).toBe("codex");
+		expect(inferProviderKindForModel(undefined)).toBe("codex");
 	});
 });
 

@@ -40,6 +40,9 @@ const BUILT_IN_MODEL_SLUGS_BY_PROVIDER: Record<
 > = {
 	codex: new Set(getModelOptions("codex").map((option) => option.slug)),
 	gemini: new Set(getModelOptions("gemini").map((option) => option.slug)),
+	"claude-code": new Set(
+		getModelOptions("claude-code").map((option) => option.slug),
+	),
 };
 
 const AppSettingsSchema = Schema.Struct({
@@ -53,6 +56,12 @@ const AppSettingsSchema = Schema.Struct({
 		Schema.withConstructorDefault(() => Option.some("")),
 	),
 	geminiHomePath: Schema.String.check(Schema.isMaxLength(4096)).pipe(
+		Schema.withConstructorDefault(() => Option.some("")),
+	),
+	claudeCodeBinaryPath: Schema.String.check(Schema.isMaxLength(4096)).pipe(
+		Schema.withConstructorDefault(() => Option.some("")),
+	),
+	claudeCodeHomePath: Schema.String.check(Schema.isMaxLength(4096)).pipe(
 		Schema.withConstructorDefault(() => Option.some("")),
 	),
 	confirmThreadDelete: Schema.Boolean.pipe(
@@ -70,6 +79,9 @@ const AppSettingsSchema = Schema.Struct({
 	customGeminiModels: Schema.Array(Schema.String).pipe(
 		Schema.withConstructorDefault(() => Option.some([])),
 	),
+	customClaudeCodeModels: Schema.Array(Schema.String).pipe(
+		Schema.withConstructorDefault(() => Option.some([])),
+	),
 });
 export type AppSettings = typeof AppSettingsSchema.Type;
 export interface AppModelOption {
@@ -84,10 +96,15 @@ function normalizeOptionalPath(value: string): string | undefined {
 }
 
 export function getCustomModelsForProvider(
-	settings: Pick<AppSettings, "customCodexModels" | "customGeminiModels">,
+	settings: Pick<
+		AppSettings,
+		"customCodexModels" | "customGeminiModels" | "customClaudeCodeModels"
+	>,
 	provider: ProviderKind,
 ): readonly string[] {
 	switch (provider) {
+		case "claude-code":
+			return settings.customClaudeCodeModels;
 		case "gemini":
 			return settings.customGeminiModels;
 		default:
@@ -98,8 +115,15 @@ export function getCustomModelsForProvider(
 export function patchCustomModelsForProvider(
 	provider: ProviderKind,
 	models: string[],
-): Partial<Pick<AppSettings, "customCodexModels" | "customGeminiModels">> {
+): Partial<
+	Pick<
+		AppSettings,
+		"customCodexModels" | "customGeminiModels" | "customClaudeCodeModels"
+	>
+> {
 	switch (provider) {
+		case "claude-code":
+			return { customClaudeCodeModels: models };
 		case "gemini":
 			return { customGeminiModels: models };
 		default:
@@ -110,11 +134,29 @@ export function patchCustomModelsForProvider(
 export function getProviderStartOptionsForProvider(
 	settings: Pick<
 		AppSettings,
-		"codexBinaryPath" | "codexHomePath" | "geminiBinaryPath" | "geminiHomePath"
+		| "codexBinaryPath"
+		| "codexHomePath"
+		| "geminiBinaryPath"
+		| "geminiHomePath"
+		| "claudeCodeBinaryPath"
+		| "claudeCodeHomePath"
 	>,
 	provider: ProviderKind,
 ): ProviderStartOptions | undefined {
 	switch (provider) {
+		case "claude-code": {
+			const binaryPath = normalizeOptionalPath(settings.claudeCodeBinaryPath);
+			const homePath = normalizeOptionalPath(settings.claudeCodeHomePath);
+			if (!binaryPath && !homePath) {
+				return undefined;
+			}
+			return {
+				claudeCode: {
+					...(binaryPath ? { binaryPath } : {}),
+					...(homePath ? { homePath } : {}),
+				},
+			};
+		}
 		case "gemini": {
 			const binaryPath = normalizeOptionalPath(settings.geminiBinaryPath);
 			const homePath = normalizeOptionalPath(settings.geminiHomePath);
@@ -207,6 +249,10 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
 		customGeminiModels: normalizeCustomModelSlugs(
 			settings.customGeminiModels ?? [],
 			"gemini",
+		),
+		customClaudeCodeModels: normalizeCustomModelSlugs(
+			settings.customClaudeCodeModels ?? [],
+			"claude-code",
 		),
 	};
 }

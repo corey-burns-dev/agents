@@ -1,0 +1,51 @@
+# Flatpak manifest for Agents desktop app.
+# Build from repo root after building the app (no bundle):
+#   bun run build:desktop:no-bundle
+#   flatpak-builder --force-clean build flatpak/com.agents.agents.yml
+# Install locally: flatpak-builder --user --install build flatpak/com.agents.agents.yml
+# Export .flatpak: flatpak-builder --repo=repo build flatpak/com.agents.agents.yml && flatpak build-bundle repo agents.flatpak com.agents.agents
+
+id: com.agents.agents
+runtime: org.gnome.Platform
+runtime-version: "46"
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.node20
+
+command: agents
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --share=ipc
+  - --share=network
+  - --filesystem=home
+  - --env=FLATPAK=1
+  - --env=PATH=/usr/lib/sdk/node20/bin:/usr/bin
+
+# Node at runtime so the app can spawn the server subprocess
+add-extensions:
+  org.freedesktop.Sdk.Extension.node20:
+    directory: /usr/lib/sdk/node20
+    version: "22.08"
+
+build-options:
+  append-path: /usr/lib/sdk/node20/bin
+
+modules:
+  - name: agents
+    buildsystem: simple
+    sources:
+      - type: dir
+        path: ..
+    build-commands:
+      - install -Dm755 apps/desktop/tauri/src-tauri/target/release/agents -t /app/bin/
+      - mkdir -p /app/lib/com.agents.agents/apps/server/dist
+      - cp -r apps/server/dist/* /app/lib/com.agents.agents/apps/server/dist/
+      - install -Dm644 flatpak/com.agents.agents.desktop -t /app/share/applications/
+      - install -Dm644 flatpak/com.agents.agents.metainfo.xml -t /app/share/metainfo/
+      - install -Dm644 apps/desktop/tauri/resources/icon.png /app/share/icons/hicolor/256x256/apps/com.agents.agents.png
+      - install -Dm644 apps/desktop/tauri/resources/icon.png /app/share/icons/hicolor/128x128/apps/com.agents.agents.png
+      - install -Dm644 apps/desktop/tauri/resources/icon.png /app/share/icons/hicolor/64x64/apps/com.agents.agents.png
+      - install -Dm644 apps/desktop/tauri/resources/icon.png /app/share/icons/hicolor/48x48/apps/com.agents.agents.png
+      - install -Dm644 apps/desktop/tauri/resources/icon.png /app/share/icons/hicolor/32x32/apps/com.agents.agents.png

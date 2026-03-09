@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Agents (Alpha)
+Comment=Minimal web GUI for code agents
+Exec=agents
+Icon=com.agents.agents
+Categories=Development;IDE;
+StartupNotify=true

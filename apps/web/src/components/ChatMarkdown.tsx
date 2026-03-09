@@ -27,6 +27,7 @@ import {
 	resolveDiffThemeName,
 } from "../lib/diffRendering";
 import { LRUCache } from "../lib/lruCache";
+import { cn } from "../lib/utils";
 import { resolveMarkdownFileLinkTarget } from "../markdown-links";
 import { readNativeApi } from "../nativeApi";
 import { preferredTerminalEditor } from "../terminal-links";
@@ -274,6 +275,13 @@ function ChatMarkdown({ text, cwd, isStreaming = false }: ChatMarkdownProps) {
 							}
 						}}
 					/>
+				);
+			},
+			code({ node: _node, className, children, ...props }) {
+				return (
+					<code {...props} className={cn("font-mono", className)}>
+						{children}
+					</code>
 				);
 			},
 			pre({ node: _node, children, ...props }) {

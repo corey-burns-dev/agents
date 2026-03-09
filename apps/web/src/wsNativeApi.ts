@@ -13,7 +13,7 @@ import {
 import { Cause, Schema } from "effect";
 
 import { showContextMenuFallback } from "./contextMenuFallback";
-import { WsTransport } from "./wsTransport";
+import { type WsConnectionState, WsTransport } from "./wsTransport";
 
 let instance: { api: NativeApi; transport: WsTransport } | null = null;
 const welcomeListeners = new Set<(payload: WsWelcomePayload) => void>();
@@ -83,6 +83,25 @@ export function onServerConfigUpdated(
 	return () => {
 		serverConfigUpdatedListeners.delete(listener);
 	};
+}
+
+/**
+ * Current WebSocket connection state. Returns "connected" when there is no
+ * transport (e.g. desktop bridge); otherwise reflects the transport state.
+ */
+export function getConnectionState(): WsConnectionState {
+	return instance?.transport.getConnectionState() ?? "connected";
+}
+
+/**
+ * Subscribe to WebSocket connection state changes (e.g. reconnecting after disconnect).
+ * No-op when there is no transport. Use for showing a "Reconnecting…" banner.
+ */
+export function onConnectionStateChange(
+	listener: (state: WsConnectionState) => void,
+): () => void {
+	if (!instance?.transport) return () => {};
+	return instance.transport.subscribeConnectionState(listener);
 }
 
 export function createWsNativeApi(): NativeApi {

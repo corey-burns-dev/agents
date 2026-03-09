@@ -34,6 +34,7 @@ import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import {
 	useCallback,
 	useEffect,
+	useEffectEvent,
 	useLayoutEffect,
 	useMemo,
 	useRef,
@@ -257,7 +258,7 @@ function isAvailableProviderOption(
 	label: string;
 	available: true;
 } {
-	return option.available && option.value !== "claudeCode";
+	return option.available;
 }
 
 const AVAILABLE_PROVIDER_OPTIONS = PROVIDER_OPTIONS.filter(
@@ -267,6 +268,7 @@ const AVAILABLE_PROVIDER_OPTIONS = PROVIDER_OPTIONS.filter(
 function getCustomModelOptionsByProvider(settings: {
 	customCodexModels: readonly string[];
 	customGeminiModels: readonly string[];
+	customClaudeCodeModels: readonly string[];
 }): Record<ProviderKind, ReadonlyArray<{ slug: string; name: string }>> {
 	return {
 		codex: getAppModelOptions(
@@ -276,6 +278,10 @@ function getCustomModelOptionsByProvider(settings: {
 		gemini: getAppModelOptions(
 			"gemini",
 			getCustomModelsForProvider(settings, "gemini"),
+		),
+		"claude-code": getAppModelOptions(
+			"claude-code",
+			getCustomModelsForProvider(settings, "claude-code"),
 		),
 	};
 }
@@ -409,7 +415,6 @@ export default function ChatView({ threadId }: ChatViewProps) {
 	>({});
 	const [sendPhase, setSendPhase] = useState<SendPhase>("idle");
 	const [sendStartedAt, setSendStartedAt] = useState<string | null>(null);
-	const [isConnecting, _setIsConnecting] = useState(false);
 	const [isRevertingCheckpoint, setIsRevertingCheckpoint] = useState(false);
 	const [respondingRequestIds, setRespondingRequestIds] = useState<
 		ApprovalRequestId[]
@@ -476,6 +481,19 @@ export default function ChatView({ threadId }: ChatViewProps) {
 	const sendInFlightRef = useRef(false);
 	const dragDepthRef = useRef(0);
 	const terminalOpenByThreadRef = useRef<Record<string, boolean>>({});
+
+	const [pendingQueue, setPendingQueue] = useState<
+		{
+			threadId: string;
+			prompt: string;
+			images: ComposerImageAttachment[];
+		}[]
+	>([]);
+	const pendingQueueRef = useRef(pendingQueue);
+	useEffect(() => {
+		pendingQueueRef.current = pendingQueue;
+	}, [pendingQueue]);
+
 	const setMessagesScrollContainerRef = useCallback(
 		(element: HTMLDivElement | null) => {
 			messagesScrollRef.current = element;
@@ -689,6 +707,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 		[lockedProvider, modelOptionsByProvider],
 	);
 	const phase = derivePhase(activeThread?.session ?? null);
+	const isConnecting = phase === "connecting";
 	const isSendBusy = sendPhase !== "idle";
 	const isPreparingWorktree = sendPhase === "preparing-worktree";
 	const isWorking =
@@ -2412,32 +2431,65 @@ export default function ChatView({ threadId }: ChatViewProps) {
 		],
 	);
 
-	const onSend = async (e?: { preventDefault: () => void }) => {
+	const onSend = async (
+		e?: { preventDefault: () => void },
+		queued?: {
+			threadId: string;
+			prompt: string;
+			images: ComposerImageAttachment[];
+		},
+	) => {
 		e?.preventDefault();
 		const api = readNativeApi();
-		if (
-			!api ||
-			!activeThread ||
-			isSendBusy ||
-			isConnecting ||
-			sendInFlightRef.current
-		)
+		if (!api || isConnecting || sendInFlightRef.current) return;
+
+		// If we're working and this is a new message (not from queue), enqueue it
+		if (isWorking && !queued && !activePendingProgress) {
+			const threadId = activeThread?.id;
+			if (!threadId) return;
+
+			setPendingQueue((prev) => [
+				...prev,
+				{ threadId, prompt, images: [...composerImages] },
+			]);
+
+			// Clear composer for next message
+			promptRef.current = "";
+			setPrompt("");
+			clearComposerDraftContent(threadId);
+			setComposerHighlightedItemId(null);
+			setComposerCursor(0);
+			setComposerTrigger(null);
 			return;
+		}
+
+		// Use queued data if available, otherwise use current state
+		const activeThreadForSend = queued
+			? threads.find((t) => t.id === queued.threadId)
+			: activeThread;
+		const promptForSend = queued ? queued.prompt : prompt;
+		const imagesForSend = queued ? queued.images : composerImages;
+
+		if (!activeThreadForSend || (isWorking && !activePendingProgress)) return;
+
 		if (activePendingProgress) {
 			onAdvanceActivePendingUserInput();
 			return;
 		}
-		const trimmed = prompt.trim();
+		const trimmed = promptForSend.trim();
 		if (showPlanFollowUpPrompt && activeProposedPlan) {
 			const followUp = resolvePlanFollowUpSubmission({
 				draftText: trimmed,
 				planMarkdown: activeProposedPlan.planMarkdown,
 			});
-			promptRef.current = "";
-			clearComposerDraftContent(activeThread.id);
-			setComposerHighlightedItemId(null);
-			setComposerCursor(0);
-			setComposerTrigger(null);
+			if (!queued) {
+				promptRef.current = "";
+				setPrompt("");
+				clearComposerDraftContent(activeThreadForSend.id);
+				setComposerHighlightedItemId(null);
+				setComposerCursor(0);
+				setComposerTrigger(null);
+			}
 			await onSubmitPlanFollowUp({
 				text: followUp.text,
 				interactionMode: followUp.interactionMode,
@@ -2445,33 +2497,40 @@ export default function ChatView({ threadId }: ChatViewProps) {
 			return;
 		}
 		const standaloneSlashCommand =
-			composerImages.length === 0
+			imagesForSend.length === 0
 				? parseStandaloneComposerSlashCommand(trimmed)
 				: null;
 		if (standaloneSlashCommand) {
 			await handleInteractionModeChange(standaloneSlashCommand);
-			promptRef.current = "";
-			clearComposerDraftContent(activeThread.id);
-			setComposerHighlightedItemId(null);
-			setComposerCursor(0);
-			setComposerTrigger(null);
+			if (!queued) {
+				promptRef.current = "";
+				setPrompt("");
+				clearComposerDraftContent(activeThreadForSend.id);
+				setComposerHighlightedItemId(null);
+				setComposerCursor(0);
+				setComposerTrigger(null);
+			}
 			return;
 		}
-		if (!trimmed && composerImages.length === 0) return;
+		if (!trimmed && imagesForSend.length === 0) return;
 		if (!activeProject) return;
-		const threadIdForSend = activeThread.id;
+		const threadIdForSend = activeThreadForSend.id;
 		const isFirstMessage =
-			!isServerThread || activeThread.messages.length === 0;
+			!isServerThread || activeThreadForSend.messages.length === 0;
 		const baseBranchForWorktree =
-			isFirstMessage && envMode === "worktree" && !activeThread.worktreePath
-				? activeThread.branch
+			isFirstMessage &&
+			envMode === "worktree" &&
+			!activeThreadForSend.worktreePath
+				? activeThreadForSend.branch
 				: null;
 
 		// In worktree mode, require an explicit base branch so we don't silently
 		// fall back to local execution when branch selection is missing.
 		const shouldCreateWorktree =
-			isFirstMessage && envMode === "worktree" && !activeThread.worktreePath;
-		if (shouldCreateWorktree && !activeThread.branch) {
+			isFirstMessage &&
+			envMode === "worktree" &&
+			!activeThreadForSend.worktreePath;
+		if (shouldCreateWorktree && !activeThreadForSend.branch) {
 			setStoreThreadError(
 				threadIdForSend,
 				"Select a base branch before sending in New worktree mode.",
@@ -2484,19 +2543,9 @@ export default function ChatView({ threadId }: ChatViewProps) {
 			baseBranchForWorktree ? "preparing-worktree" : "sending-turn",
 		);
 
-		const composerImagesSnapshot = [...composerImages];
 		const messageIdForSend = newMessageId();
 		const messageCreatedAt = new Date().toISOString();
-		const turnAttachmentsPromise = Promise.all(
-			composerImagesSnapshot.map(async (image) => ({
-				type: "image" as const,
-				name: image.name,
-				mimeType: image.mimeType,
-				sizeBytes: image.sizeBytes,
-				dataUrl: await readFileAsDataUrl(image.file),
-			})),
-		);
-		const optimisticAttachments = composerImagesSnapshot.map((image) => ({
+		const optimisticAttachments = imagesForSend.map((image) => ({
 			type: "image" as const,
 			id: image.id,
 			name: image.name,
@@ -2522,16 +2571,19 @@ export default function ChatView({ threadId }: ChatViewProps) {
 		forceStickToBottom();
 
 		setThreadError(threadIdForSend, null);
-		promptRef.current = "";
-		clearComposerDraftContent(threadIdForSend);
-		setComposerHighlightedItemId(null);
-		setComposerCursor(0);
-		setComposerTrigger(null);
+		if (!queued) {
+			promptRef.current = "";
+			setPrompt("");
+			clearComposerDraftContent(threadIdForSend);
+			setComposerHighlightedItemId(null);
+			setComposerCursor(0);
+			setComposerTrigger(null);
+		}
 
 		let createdServerThreadForLocalDraft = false;
 		let turnStartSucceeded = false;
-		let nextThreadBranch = activeThread.branch;
-		let nextThreadWorktreePath = activeThread.worktreePath;
+		let nextThreadBranch = activeThreadForSend.branch;
+		let nextThreadWorktreePath = activeThreadForSend.worktreePath;
 		await (async () => {
 			// On first message: lock in branch + create worktree if needed.
 			if (baseBranchForWorktree) {
@@ -2549,8 +2601,8 @@ export default function ChatView({ threadId }: ChatViewProps) {
 						type: "thread.meta.update",
 						commandId: newCommandId(),
 						threadId: threadIdForSend,
-						branch: result.worktree.branch,
-						worktreePath: result.worktree.path,
+						branch: nextThreadBranch,
+						worktreePath: nextThreadWorktreePath,
 					});
 					// Keep local thread state in sync immediately so terminal drawer opens
 					// with the worktree cwd/env instead of briefly using the project root.
@@ -2563,8 +2615,8 @@ export default function ChatView({ threadId }: ChatViewProps) {
 			}
 
 			let firstComposerImageName: string | null = null;
-			if (composerImagesSnapshot.length > 0) {
-				const firstComposerImage = composerImagesSnapshot[0];
+			if (imagesForSend.length > 0) {
+				const firstComposerImage = imagesForSend[0];
 				if (firstComposerImage) {
 					firstComposerImageName = firstComposerImage.name;
 				}
@@ -2595,7 +2647,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 					interactionMode,
 					branch: nextThreadBranch,
 					worktreePath: nextThreadWorktreePath,
-					createdAt: activeThread.createdAt,
+					createdAt: activeThreadForSend.createdAt,
 				});
 				createdServerThreadForLocalDraft = true;
 			}
@@ -2646,8 +2698,17 @@ export default function ChatView({ threadId }: ChatViewProps) {
 				});
 			}
 
+			const turnAttachments = await Promise.all(
+				imagesForSend.map(async (image) => ({
+					type: "image" as const,
+					name: image.name,
+					mimeType: image.mimeType,
+					sizeBytes: image.sizeBytes,
+					dataUrl: await readFileAsDataUrl(image.file),
+				})),
+			);
+
 			beginSendPhase("sending-turn");
-			const turnAttachments = await turnAttachmentsPromise;
 			await api.orchestration.dispatchCommand({
 				type: "thread.turn.start",
 				commandId: newCommandId(),
@@ -2708,9 +2769,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 				promptRef.current = trimmed;
 				setPrompt(trimmed);
 				setComposerCursor(trimmed.length);
-				addComposerImagesToDraft(
-					composerImagesSnapshot.map(cloneComposerImageForRetry),
-				);
+				addComposerImagesToDraft(imagesForSend.map(cloneComposerImageForRetry));
 				setComposerTrigger(detectComposerTrigger(trimmed, trimmed.length));
 			}
 			setThreadError(
@@ -2723,6 +2782,23 @@ export default function ChatView({ threadId }: ChatViewProps) {
 			resetSendPhase();
 		}
 	};
+
+	const flushPendingQueuedSend = useEffectEvent(
+		(next: (typeof pendingQueue)[number]) => {
+			setPendingQueue((prev) => prev.slice(1));
+			void onSend(undefined, next);
+		},
+	);
+
+	useEffect(() => {
+		if (isWorking || pendingQueue.length === 0 || sendInFlightRef.current) {
+			return;
+		}
+
+		const next = pendingQueue[0];
+		if (!next) return;
+		flushPendingQueuedSend(next);
+	}, [isWorking, pendingQueue]);
 
 	const onInterrupt = async () => {
 		const api = readNativeApi();

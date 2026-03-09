@@ -33,12 +33,30 @@ describe("resolveEditorLaunch", () => {
 				args: ["/tmp/workspace"],
 			});
 
+			const codeInsidersLaunch = yield* resolveEditorLaunch(
+				{ cwd: "/tmp/workspace", editor: "code-insiders" },
+				"darwin",
+			);
+			assert.deepEqual(codeInsidersLaunch, {
+				command: "code-insiders",
+				args: ["/tmp/workspace"],
+			});
+
 			const zedLaunch = yield* resolveEditorLaunch(
 				{ cwd: "/tmp/workspace", editor: "zed" },
 				"darwin",
 			);
 			assert.deepEqual(zedLaunch, {
 				command: "zed",
+				args: ["/tmp/workspace"],
+			});
+
+			const antigravityLaunch = yield* resolveEditorLaunch(
+				{ cwd: "/tmp/workspace", editor: "antigravity" },
+				"darwin",
+			);
+			assert.deepEqual(antigravityLaunch, {
+				command: "antigravity",
 				args: ["/tmp/workspace"],
 			});
 		}),
@@ -73,6 +91,15 @@ describe("resolveEditorLaunch", () => {
 				args: ["--goto", "/tmp/workspace/src/open.ts:71:5"],
 			});
 
+			const codeInsidersLineAndColumn = yield* resolveEditorLaunch(
+				{ cwd: "/tmp/workspace/src/open.ts:71:5", editor: "code-insiders" },
+				"darwin",
+			);
+			assert.deepEqual(codeInsidersLineAndColumn, {
+				command: "code-insiders",
+				args: ["--goto", "/tmp/workspace/src/open.ts:71:5"],
+			});
+
 			const zedLineAndColumn = yield* resolveEditorLaunch(
 				{ cwd: "/tmp/workspace/src/open.ts:71:5", editor: "zed" },
 				"darwin",
@@ -80,6 +107,15 @@ describe("resolveEditorLaunch", () => {
 			assert.deepEqual(zedLineAndColumn, {
 				command: "zed",
 				args: ["/tmp/workspace/src/open.ts:71:5"],
+			});
+
+			const antigravityLineAndColumn = yield* resolveEditorLaunch(
+				{ cwd: "/tmp/workspace/src/open.ts:71:5", editor: "antigravity" },
+				"darwin",
+			);
+			assert.deepEqual(antigravityLineAndColumn, {
+				command: "antigravity",
+				args: ["--goto", "/tmp/workspace/src/open.ts:71:5"],
 			});
 		}),
 	);

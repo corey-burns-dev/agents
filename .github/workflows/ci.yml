@@ -61,7 +61,7 @@ jobs:
       - name: Cache Rust
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: apps/desktop/src-tauri
+          workspaces: apps/desktop/tauri/src-tauri
 
       - name: Lint
         run: bun run lint
@@ -85,5 +85,5 @@ jobs:
 
       - name: Verify Tauri bundle output
         run: |
-          test -d apps/desktop/src-tauri/target/release/bundle
-          ls -la apps/desktop/src-tauri/target/release/bundle/
+          test -d apps/desktop/tauri/src-tauri/target/release/bundle
+          ls -la apps/desktop/tauri/src-tauri/target/release/bundle/

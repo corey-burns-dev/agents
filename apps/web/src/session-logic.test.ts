@@ -684,26 +684,19 @@ describe("deriveActiveWorkStartedAt", () => {
 });
 
 describe("PROVIDER_OPTIONS", () => {
-	it("keeps Claude Code and Cursor visible as unavailable placeholders in the stack base", () => {
+	it("lists available and unavailable providers", () => {
 		const claude = PROVIDER_OPTIONS.find(
-			(option) => option.value === "claudeCode",
+			(option) => option.value === "claude-code",
 		);
-		const cursor = PROVIDER_OPTIONS.find((option) => option.value === "cursor");
 		expect(PROVIDER_OPTIONS).toEqual([
 			{ value: "codex", label: "Codex", available: true },
 			{ value: "gemini", label: "Gemini", available: true },
-			{ value: "claudeCode", label: "Claude Code", available: false },
-			{ value: "cursor", label: "Cursor", available: false },
+			{ value: "claude-code", label: "Claude Code", available: true },
 		]);
 		expect(claude).toEqual({
-			value: "claudeCode",
+			value: "claude-code",
 			label: "Claude Code",
-			available: false,
-		});
-		expect(cursor).toEqual({
-			value: "cursor",
-			label: "Cursor",
-			available: false,
+			available: true,
 		});
 	});
 });

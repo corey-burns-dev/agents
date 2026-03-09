@@ -5,7 +5,7 @@ Short prioritized list from the repo audit. Focus: current-stack improvements on
 ## Addressed in This Pass
 
 1. **Desktop bootstrap env drift** – Server and dev-runner now use canonical `AGENTS_*` env vars; dev-runner sets both `AGENTS_*` and `AGENTS_*` for compatibility. Server and desktop Rust read `AGENTS_*` first with `AGENTS_*` fallback.
-2. **Tracked Tauri build outputs** – `apps/desktop/src-tauri/target` added to root and desktop `.gitignore`; Biome already excluded it. No tracked artifacts under `target/` were present.
+2. **Tracked Tauri build outputs** – `apps/desktop/tauri/src-tauri/target` added to root and desktop `.gitignore`; Biome already excluded it. No tracked artifacts under `target/` were present.
 3. **Stale Electron naming** – `isElectron` renamed to `isDesktopShell` across web app; comments updated to "desktop shell (Tauri)".
 4. **Stale `agents` state/worktree paths** – Default state dir is `~/.agents/userdata`; worktrees use `~/.agents/worktrees/...`. Legacy `~/.agents` remains readable during migration (server/desktop read canonical first, then legacy where applicable).
 5. **Product branding** – Desktop binary/crate name `agents-code` → `agents`; UI strings "Agents Code" → "Agents" in settings, dialogs, and smoke test.

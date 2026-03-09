@@ -15,14 +15,14 @@ class BunPtyProcess implements PtyProcess {
 
 	constructor(private readonly process: Bun.Subprocess) {
 		void this.process.exited
-			.then((exitCode: any) => {
-				this.emitExit({
-					exitCode: Number.isInteger(exitCode) ? exitCode : 0,
-					signal:
-						typeof this.process.signalCode === "number"
-							? this.process.signalCode
-							: null,
-				});
+			.then((code: number | null | undefined) => {
+				const exitCode =
+					typeof code === "number" && Number.isInteger(code) ? code : 0;
+				const signal =
+					typeof this.process.signalCode === "number"
+						? this.process.signalCode
+						: null;
+				this.emitExit({ exitCode, signal });
 			})
 			.catch(() => {
 				this.emitExit({ exitCode: 1, signal: null });
@@ -114,7 +114,7 @@ export const BunPtyAdapterLive = Layer.effect(
 						terminal: {
 							cols: input.cols,
 							rows: input.rows,
-							data: (_terminal: any, data: any) => {
+							data: (_terminal: unknown, data: Uint8Array) => {
 								processHandle?.emitData(data);
 							},
 						},

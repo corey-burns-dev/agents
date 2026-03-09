@@ -13,13 +13,16 @@ import {
 	useQuery,
 	useQueryClient,
 } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { isNonEmpty as isNonEmptyString } from "effect/String";
 import {
+	ArrowLeftIcon,
 	ChevronRightIcon,
 	FolderIcon,
 	GitPullRequestIcon,
+	PlusIcon,
 	RocketIcon,
+	SettingsIcon,
 	SquarePenIcon,
 	TerminalIcon,
 } from "lucide-react";
@@ -87,7 +90,7 @@ import { toastManager } from "./ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
 
 const EMPTY_KEYBINDINGS: ResolvedKeybindingsConfig = [];
-const THREAD_PREVIEW_LIMIT = 6;
+const THREAD_PREVIEW_LIMIT = 10;
 
 async function copyTextToClipboard(text: string): Promise<void> {
 	if (
@@ -323,6 +326,9 @@ export default function Sidebar() {
 		(store) => store.clearProjectDraftThreadById,
 	);
 	const navigate = useNavigate();
+	const isOnSettings = useLocation({
+		select: (location) => location.pathname === "/settings",
+	});
 	const { settings: appSettings } = useAppSettings();
 	const routeThreadId = useParams({
 		strict: false,
@@ -341,6 +347,7 @@ export default function Sidebar() {
 	const [newCwd, setNewCwd] = useState("");
 	const [isPickingFolder, setIsPickingFolder] = useState(false);
 	const [isAddingProject, setIsAddingProject] = useState(false);
+	const [addProjectError, setAddProjectError] = useState<string | null>(null);
 	const [renamingThreadId, setRenamingThreadId] = useState<ThreadId | null>(
 		null,
 	);
@@ -349,6 +356,7 @@ export default function Sidebar() {
 		useState<ReadonlySet<ProjectId>>(() => new Set());
 	const renamingCommittedRef = useRef(false);
 	const renamingInputRef = useRef<HTMLInputElement | null>(null);
+	const addProjectInputRef = useRef<HTMLInputElement | null>(null);
 	const [desktopUpdateState, setDesktopUpdateState] =
 		useState<DesktopUpdateState | null>(null);
 	const pendingApprovalByThreadId = useMemo(() => {
@@ -555,6 +563,7 @@ export default function Sidebar() {
 			const finishAddingProject = () => {
 				setIsAddingProject(false);
 				setNewCwd("");
+				setAddProjectError(null);
 				setAddingProject(false);
 			};
 
@@ -581,14 +590,11 @@ export default function Sidebar() {
 				await handleNewThread(projectId).catch(() => undefined);
 			} catch (error) {
 				setIsAddingProject(false);
-				toastManager.add({
-					type: "error",
-					title: "Unable to add project",
-					description:
-						error instanceof Error
-							? error.message
-							: "An error occurred while adding the project.",
-				});
+				setAddProjectError(
+					error instanceof Error
+						? error.message
+						: "An error occurred while adding the project.",
+				);
 				return;
 			}
 			finishAddingProject();
@@ -617,6 +623,8 @@ export default function Sidebar() {
 		}
 		if (pickedPath) {
 			await addProjectFromPath(pickedPath);
+		} else {
+			addProjectInputRef.current?.focus();
 		}
 		setIsPickingFolder(false);
 	};
@@ -909,6 +917,16 @@ export default function Sidebar() {
 	);
 
 	useEffect(() => {
+		if (!addingProject) return;
+		const animationFrame = window.requestAnimationFrame(() => {
+			addProjectInputRef.current?.focus();
+		});
+		return () => {
+			window.cancelAnimationFrame(animationFrame);
+		};
+	}, [addingProject]);
+
+	useEffect(() => {
 		const onWindowKeyDown = (event: KeyboardEvent) => {
 			const activeThread = routeThreadId
 				? threads.find((thread) => thread.id === routeThreadId)
@@ -1172,6 +1190,94 @@ export default function Sidebar() {
 
 			<SidebarContent className="gap-0">
 				<SidebarGroup className="px-2 py-2">
+					<div className="mb-1 flex items-center justify-between px-2">
+						<span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
+							Projects
+						</span>
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<button
+										type="button"
+										aria-label="Add project"
+										className="inline-flex size-5 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground"
+										onClick={() => {
+											setAddingProject((previous) => !previous);
+											setAddProjectError(null);
+										}}
+									/>
+								}
+							>
+								<PlusIcon className="size-3.5" />
+							</TooltipTrigger>
+							<TooltipPopup side="right">Add project</TooltipPopup>
+						</Tooltip>
+					</div>
+
+					{addingProject && (
+						<div className="mb-2 px-1">
+							{isDesktopShell && (
+								<button
+									type="button"
+									className="mb-1.5 flex w-full items-center justify-center gap-2 rounded-md border border-border bg-secondary py-1.5 text-xs text-foreground/80 transition-colors duration-150 hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+									onClick={() => void handlePickFolder()}
+									disabled={isPickingFolder || isAddingProject}
+								>
+									<FolderIcon className="size-3.5" />
+									{isPickingFolder ? "Picking folder..." : "Browse for folder"}
+								</button>
+							)}
+							<div className="flex gap-1.5">
+								<input
+									ref={addProjectInputRef}
+									className={`min-w-0 flex-1 rounded-md border bg-secondary px-2 py-1 font-mono text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none ${
+										addProjectError
+											? "border-red-500/70 focus:border-red-500"
+											: "border-border focus:border-ring"
+									}`}
+									placeholder="/path/to/project"
+									value={newCwd}
+									onChange={(event) => {
+										setNewCwd(event.target.value);
+										setAddProjectError(null);
+									}}
+									onKeyDown={(event) => {
+										if (event.key === "Enter") handleAddProject();
+										if (event.key === "Escape") {
+											setAddingProject(false);
+											setAddProjectError(null);
+										}
+									}}
+								/>
+								<button
+									type="button"
+									className="shrink-0 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary/90 disabled:opacity-60"
+									onClick={handleAddProject}
+									disabled={isAddingProject}
+								>
+									{isAddingProject ? "Adding..." : "Add"}
+								</button>
+							</div>
+							{addProjectError && (
+								<p className="mt-1 px-0.5 text-[11px] leading-tight text-red-400">
+									{addProjectError}
+								</p>
+							)}
+							<div className="mt-1.5 px-0.5">
+								<button
+									type="button"
+									className="text-[11px] text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+									onClick={() => {
+										setAddingProject(false);
+										setAddProjectError(null);
+									}}
+								>
+									Cancel
+								</button>
+							</div>
+						</div>
+					)}
+
 					<SidebarMenu>
 						{projects.map((project) => {
 							const projectThreads = threads
@@ -1481,59 +1587,35 @@ export default function Sidebar() {
 			</SidebarContent>
 
 			<SidebarSeparator />
-			<SidebarFooter className="gap-0 p-3">
-				{addingProject ? (
-					<>
-						<p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
-							Add project
-						</p>
-						<input
-							className="mb-2 w-full rounded-md border border-border bg-secondary px-2 py-1.5 font-mono text-xs text-foreground placeholder:text-muted-foreground/40 focus:border-ring focus:outline-none"
-							placeholder="/path/to/project"
-							value={newCwd}
-							onChange={(event) => setNewCwd(event.target.value)}
-							onKeyDown={(event) => {
-								if (event.key === "Enter") handleAddProject();
-								if (event.key === "Escape") setAddingProject(false);
+			<SidebarFooter className="p-2">
+				<SidebarMenu>
+					<SidebarMenuItem>
+						<SidebarMenuButton
+							size="sm"
+							className="gap-2 px-2 py-1.5 text-muted-foreground/70 hover:bg-accent hover:text-foreground"
+							onClick={() => {
+								if (isOnSettings) {
+									if (window.history.length > 1) {
+										window.history.back();
+									} else {
+										void navigate({ to: "/" });
+									}
+									return;
+								}
+								void navigate({ to: "/settings" });
 							}}
-						/>
-						{isDesktopShell && (
-							<button
-								type="button"
-								className="mb-2 flex w-full items-center justify-center rounded-md border border-border px-2 py-1.5 text-xs text-muted-foreground transition-colors duration-150 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
-								onClick={() => void handlePickFolder()}
-								disabled={isPickingFolder || isAddingProject}
-							>
-								{isPickingFolder ? "Picking folder..." : "Browse for folder"}
-							</button>
-						)}
-						<div className="flex gap-2">
-							<button
-								type="button"
-								className="flex-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary/90"
-								onClick={handleAddProject}
-								disabled={isAddingProject}
-							>
-								{isAddingProject ? "Adding..." : "Add"}
-							</button>
-							<button
-								type="button"
-								className="flex-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground/80 transition-colors duration-150 hover:bg-secondary"
-								onClick={() => setAddingProject(false)}
-							>
-								Cancel
-							</button>
-						</div>
-					</>
-				) : (
-					<button
-						type="button"
-						className="flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-border py-2 text-xs text-muted-foreground/70 transition-colors duration-150 hover:border-ring hover:text-muted-foreground"
-						onClick={() => setAddingProject(true)}
-					>
-						+ Add project
-					</button>
-				)}
+						>
+							{isOnSettings ? (
+								<ArrowLeftIcon className="size-3.5" />
+							) : (
+								<SettingsIcon className="size-3.5" />
+							)}
+							<span className="text-xs">
+								{isOnSettings ? "Back" : "Settings"}
+							</span>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
+				</SidebarMenu>
 			</SidebarFooter>
 		</>
 	);

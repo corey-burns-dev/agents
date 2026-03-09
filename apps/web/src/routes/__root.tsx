@@ -7,7 +7,7 @@ import {
 	useNavigate,
 	useRouterState,
 } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { APP_DISPLAY_NAME } from "../branding";
 import { Button } from "../components/ui/button";
@@ -28,7 +28,12 @@ import { useStore } from "../store";
 import { preferredTerminalEditor } from "../terminal-links";
 import { terminalRunningSubprocessFromEvent } from "../terminalActivity";
 import { useTerminalStateStore } from "../terminalStateStore";
-import { onServerConfigUpdated, onServerWelcome } from "../wsNativeApi";
+import {
+	getConnectionState,
+	onConnectionStateChange,
+	onServerConfigUpdated,
+	onServerWelcome,
+} from "../wsNativeApi";
 
 export const Route = createRootRouteWithContext<{
 	queryClient: QueryClient;
@@ -41,6 +46,11 @@ export const Route = createRootRouteWithContext<{
 });
 
 function RootRouteView() {
+	const [connectionState, setConnectionState] = useState(getConnectionState);
+	useEffect(() => {
+		return onConnectionStateChange(setConnectionState);
+	}, []);
+
 	if (!readNativeApi()) {
 		return (
 			<div className="flex h-screen flex-col bg-background text-foreground">
@@ -56,6 +66,11 @@ function RootRouteView() {
 	return (
 		<ToastProvider>
 			<AnchoredToastProvider>
+				{connectionState === "reconnecting" && (
+					<div className="bg-muted/90 text-muted-foreground px-3 py-2 text-center text-sm">
+						Reconnecting…
+					</div>
+				)}
 				<EventRouter />
 				<DesktopProjectBootstrap />
 				<Outlet />
@@ -195,12 +210,24 @@ function EventRouter() {
 			try {
 				await flushSnapshotSync();
 			} catch {
-				// Keep prior state and wait for next domain event to trigger a resync.
+				// Keep prior state; run one more sync if a batch was requested during the failed run.
+				if (pending) {
+					pending = false;
+					syncing = false;
+					void syncSnapshot();
+					return;
+				}
 			}
 			syncing = false;
 		};
 
 		void syncSnapshot().catch(() => undefined);
+
+		// Throttle-first batching: first event schedules a sync, further events
+		// within DOMAIN_EVENT_BATCH_MS are absorbed, then one sync runs.
+		const DOMAIN_EVENT_BATCH_MS = 100;
+		let batchTimer: ReturnType<typeof setTimeout> | null = null;
+		let pendingProviderInvalidation = false;
 
 		const unsubDomainEvent = api.orchestration.onDomainEvent((event) => {
 			if (event.sequence <= latestSequence) {
@@ -211,9 +238,20 @@ function EventRouter() {
 				event.type === "thread.turn-diff-completed" ||
 				event.type === "thread.reverted"
 			) {
-				void queryClient.invalidateQueries({ queryKey: providerQueryKeys.all });
+				pendingProviderInvalidation = true;
 			}
-			void syncSnapshot();
+			if (batchTimer === null) {
+				batchTimer = setTimeout(() => {
+					batchTimer = null;
+					if (pendingProviderInvalidation) {
+						pendingProviderInvalidation = false;
+						void queryClient.invalidateQueries({
+							queryKey: providerQueryKeys.all,
+						});
+					}
+					void syncSnapshot();
+				}, DOMAIN_EVENT_BATCH_MS);
+			}
 		});
 		const unsubTerminalEvent = api.terminal.onEvent((event) => {
 			const hasRunningSubprocess = terminalRunningSubprocessFromEvent(event);
@@ -307,6 +345,10 @@ function EventRouter() {
 		});
 		return () => {
 			disposed = true;
+			if (batchTimer !== null) {
+				clearTimeout(batchTimer);
+				batchTimer = null;
+			}
 			unsubDomainEvent();
 			unsubTerminalEvent();
 			unsubWelcome();

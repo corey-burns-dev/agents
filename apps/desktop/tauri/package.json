@@ -5,6 +5,7 @@
 	"scripts": {
 		"dev": "node scripts/wait-then-tauri-dev.mjs",
 		"build": "tauri build",
+		"build:no-bundle": "tauri build --no-bundle",
 		"start": "tauri build && tauri run",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run --passWithNoTests",

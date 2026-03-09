@@ -25,6 +25,7 @@ import { OrchestrationCommandReceiptRepositoryLive } from "./persistence/Layers/
 import { OrchestrationEventStoreLive } from "./persistence/Layers/OrchestrationEventStore";
 import { ProviderSessionRuntimeRepositoryLive } from "./persistence/Layers/ProviderSessionRuntime";
 import type { ProviderUnsupportedError } from "./provider/Errors";
+import { makeClaudeCodeAdapterLive } from "./provider/Layers/ClaudeCodeAdapter";
 import { makeCodexAdapterLive } from "./provider/Layers/CodexAdapter";
 import { makeEventNdjsonLogger } from "./provider/Layers/EventNdjsonLogger";
 import { makeGeminiAdapterLive } from "./provider/Layers/GeminiAdapter";
@@ -67,9 +68,13 @@ export function makeServerProviderLayer(): Layer.Layer<
 		const geminiAdapterLayer = makeGeminiAdapterLive(
 			nativeEventLogger ? { nativeEventLogger } : undefined,
 		);
+		const claudeCodeAdapterLayer = makeClaudeCodeAdapterLive(
+			nativeEventLogger ? { nativeEventLogger } : undefined,
+		);
 		const adapterRegistryLayer = ProviderAdapterRegistryLive.pipe(
 			Layer.provide(codexAdapterLayer),
 			Layer.provide(geminiAdapterLayer),
+			Layer.provide(claudeCodeAdapterLayer),
 			Layer.provideMerge(providerSessionDirectoryLayer),
 		);
 		return makeProviderServiceLive(

@@ -330,14 +330,63 @@ export const checkCodexProviderStatus: Effect.Effect<
 	} satisfies ServerProviderStatus;
 });
 
+const PLACEHOLDER_STATUS: ServerProviderStatus = {
+	provider: CODEX_PROVIDER,
+	status: "warning",
+	available: false,
+	authStatus: "unknown",
+	checkedAt: new Date().toISOString(),
+	message: "Checking Codex CLI availability...",
+};
+
+const ERROR_FALLBACK_STATUS: ServerProviderStatus = {
+	provider: CODEX_PROVIDER,
+	status: "error",
+	available: false,
+	authStatus: "unknown",
+	checkedAt: new Date().toISOString(),
+	message: "Failed to check Codex CLI status.",
+};
+
 // ── Layer ───────────────────────────────────────────────────────────
 
 export const ProviderHealthLive = Layer.effect(
 	ProviderHealth,
 	Effect.gen(function* () {
-		const codexStatus = yield* checkCodexProviderStatus;
+		const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+		let cachedStatuses: ReadonlyArray<ServerProviderStatus> = [
+			PLACEHOLDER_STATUS,
+		];
+		const readyListeners: Array<
+			(statuses: ReadonlyArray<ServerProviderStatus>) => void
+		> = [];
+
+		const notifyReady = (statuses: ReadonlyArray<ServerProviderStatus>) => {
+			cachedStatuses = statuses;
+			for (const cb of readyListeners) cb(statuses);
+			readyListeners.length = 0;
+		};
+
+		// Run health checks in the background so they don't block server startup.
+		checkCodexProviderStatus
+			.pipe(
+				Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner),
+				Effect.runPromise,
+			)
+			.then((status) => notifyReady([status]))
+			.catch(() => notifyReady([ERROR_FALLBACK_STATUS]));
+
 		return {
-			getStatuses: Effect.succeed([codexStatus]),
+			getStatuses: Effect.sync(() => cachedStatuses),
+			onReady: (cb) => {
+				// If we already have a non-placeholder result, call immediately.
+				const current = cachedStatuses[0];
+				if (current && current.message !== PLACEHOLDER_STATUS.message) {
+					cb(cachedStatuses);
+				} else {
+					readyListeners.push(cb);
+				}
+			},
 		} satisfies ProviderHealthShape;
 	}),
 );

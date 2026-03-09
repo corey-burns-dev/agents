@@ -47,6 +47,7 @@ function makeState(thread: Thread): AppState {
 				model: "gpt-5-codex",
 				expanded: true,
 				scripts: [],
+				updatedAt: "2026-02-27T00:00:00.000Z",
 			},
 		],
 		threads: [thread],
@@ -149,11 +150,44 @@ describe("store pure functions", () => {
 });
 
 describe("store read model sync", () => {
+	it("preserves claude models on projects and threads", () => {
+		const initialState = makeState(makeThread());
+		const baseReadModel = makeReadModel(
+			makeReadModelThread({
+				model: "claude-opus-4-6",
+				session: {
+					threadId: ThreadId.makeUnsafe("thread-1"),
+					status: "ready",
+					providerName: "claude-code",
+					runtimeMode: DEFAULT_RUNTIME_MODE,
+					activeTurnId: null,
+					lastError: null,
+					updatedAt: "2026-02-27T00:00:00.000Z",
+				},
+			}),
+		);
+		const readModel: OrchestrationReadModel = {
+			...baseReadModel,
+			projects: [
+				{
+					...baseReadModel.projects[0]!,
+					defaultModel: "claude-sonnet-4-6",
+				},
+			],
+		};
+
+		const next = syncServerReadModel(initialState, readModel);
+
+		expect(next.projects[0]?.model).toBe("claude-sonnet-4-6");
+		expect(next.threads[0]?.model).toBe("claude-opus-4-6");
+		expect(next.threads[0]?.session?.provider).toBe("claude-code");
+	});
+
 	it("falls back to the codex default for unsupported provider models without an active session", () => {
 		const initialState = makeState(makeThread());
 		const readModel = makeReadModel(
 			makeReadModelThread({
-				model: "claude-opus-4-6",
+				model: "custom/internal-model",
 			}),
 		);
 

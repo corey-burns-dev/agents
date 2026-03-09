@@ -18,7 +18,7 @@ export interface ServerConfigRouterContext {
 	cwd: string;
 	keybindingsConfigPath: string;
 	availableEditors: ReadonlyArray<EditorId>;
-	providerStatuses: ReadonlyArray<ServerProviderStatus>;
+	getProviderStatuses: () => ReadonlyArray<ServerProviderStatus>;
 	keybindingsManager: KeybindingsShape;
 }
 
@@ -36,7 +36,7 @@ export function createServerConfigRouter(
 						keybindingsConfigPath: context.keybindingsConfigPath,
 						keybindings: keybindingsConfig.keybindings,
 						issues: keybindingsConfig.issues,
-						providers: context.providerStatuses,
+						providers: context.getProviderStatuses(),
 						availableEditors: context.availableEditors,
 					};
 				}).pipe(Effect.mapError(toRouteRequestError));

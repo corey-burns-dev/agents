@@ -8,6 +8,7 @@
 			"!**/dist-electron",
 			"!**/src-tauri/gen",
 			"!**/src-tauri/target",
+			"!**/apps/desktop/qt6/build",
 			"!**/node_modules",
 			"!**/bun.lock",
 			"!**/*.tsbuildinfo",

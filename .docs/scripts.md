@@ -10,21 +10,15 @@
 - `bun run build` — Builds contracts, server, web app, and desktop in dependency order.
 - `bun run typecheck` — Strict TypeScript checks for all packages.
 - `bun run test` — Runs workspace tests.
-- `bun run dist:desktop:artifact -- --platform <mac|linux|win> --target <target> --arch <arch>` — Builds a desktop artifact for a specific platform/target/arch.
-- `bun run dist:desktop:dmg` — Builds a shareable macOS `.dmg` into `./release`.
-- `bun run dist:desktop:dmg:x64` — Builds an Intel macOS `.dmg`.
+- `bun run dist:desktop:artifact -- --platform <linux|win> --target <target> --arch <arch>` — Builds a desktop artifact for a specific platform/target/arch.
 - `bun run dist:desktop:linux` — Builds a Linux AppImage into `./release`.
 - `bun run dist:desktop:win` — Builds a Windows NSIS installer into `./release`.
 
-## Desktop `.dmg` packaging notes
+## Desktop packaging notes
 
-- Default build is unsigned/not notarized for local sharing.
-- The DMG build uses `assets/macos-icon-1024.png` as the production app icon source.
 - Desktop production windows load the bundled UI from `agents://app/index.html` (not a `127.0.0.1` document URL).
 - Desktop packaging includes `apps/server/dist` (the `agents` backend) and starts it on loopback with an auth token for WebSocket/API traffic.
-- Your tester can still open it on macOS by right-clicking the app and choosing **Open** on first launch.
-- To keep staging files for debugging package contents, run: `bun run dist:desktop:dmg -- --keep-stage`
-- To allow code-signing/notarization when configured in CI/secrets, add: `--signed`.
+- To keep staging files for debugging package contents, run: `bun run dist:desktop:artifact -- --keep-stage`
 - Windows `--signed` uses Azure Trusted Signing and expects:
   `AZURE_TRUSTED_SIGNING_ENDPOINT`, `AZURE_TRUSTED_SIGNING_ACCOUNT_NAME`,
   `AZURE_TRUSTED_SIGNING_CERTIFICATE_PROFILE_NAME`, and `AZURE_TRUSTED_SIGNING_PUBLISHER_NAME`.

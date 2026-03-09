@@ -174,6 +174,41 @@ it.layer(makeDirectoryLayer(SqlitePersistenceMemory))(
 				}
 			}));
 
+		it("reads persisted claude-code provider bindings", () =>
+			Effect.gen(function* () {
+				const directory = yield* ProviderSessionDirectory;
+				const runtimeRepository = yield* ProviderSessionRuntimeRepository;
+
+				const threadId = ThreadId.makeUnsafe("thread-claude");
+
+				yield* runtimeRepository.upsert({
+					threadId,
+					providerName: "claude-code",
+					adapterKey: "claude-code",
+					runtimeMode: "full-access",
+					status: "running",
+					lastSeenAt: new Date().toISOString(),
+					resumeCursor: {
+						claudeSessionId: "claude-session-1",
+					},
+					runtimePayload: {
+						model: "claude-sonnet-4-6",
+					},
+				});
+
+				const binding = yield* directory.getBinding(threadId);
+				assertSome(binding, {
+					threadId,
+					provider: "claude-code",
+				});
+				if (Option.isSome(binding)) {
+					assert.equal(binding.value.provider, "claude-code");
+					assert.deepEqual(binding.value.resumeCursor, {
+						claudeSessionId: "claude-session-1",
+					});
+				}
+			}));
+
 		it("resets adapterKey to the new provider when provider changes without an explicit adapter key", () =>
 			Effect.gen(function* () {
 				const directory = yield* ProviderSessionDirectory;

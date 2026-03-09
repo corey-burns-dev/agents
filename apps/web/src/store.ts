@@ -6,9 +6,8 @@ import {
 	type ThreadId,
 } from "@agents/contracts";
 import {
-	getModelOptions,
-	normalizeModelSlug,
-	resolveModelSlug,
+	inferProviderKindForModel,
+	isProviderKind,
 	resolveModelSlugForProvider,
 } from "@agents/shared/model";
 import { createElement, Fragment, type ReactNode, useEffect } from "react";
@@ -44,8 +43,23 @@ const persistedExpandedProjectCwds = new Set<string>();
 
 // ── Persist helpers ──────────────────────────────────────────────────
 
+let legacyKeysRemovedOnce = false;
+
+function removeLegacyPersistedKeysOnce(): void {
+	if (legacyKeysRemovedOnce || typeof window === "undefined") return;
+	legacyKeysRemovedOnce = true;
+	try {
+		for (const key of LEGACY_PERSISTED_STATE_KEYS) {
+			window.localStorage.removeItem(key);
+		}
+	} catch {
+		// Ignore
+	}
+}
+
 function readPersistedState(): AppState {
 	if (typeof window === "undefined") return initialState;
+	removeLegacyPersistedKeysOnce();
 	try {
 		const raw = window.localStorage.getItem(PERSISTED_STATE_KEY);
 		if (!raw) return initialState;
@@ -62,23 +76,29 @@ function readPersistedState(): AppState {
 	}
 }
 
+const PERSIST_DEBOUNCE_MS = 500;
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
 function persistState(state: AppState): void {
 	if (typeof window === "undefined") return;
-	try {
-		window.localStorage.setItem(
-			PERSISTED_STATE_KEY,
-			JSON.stringify({
-				expandedProjectCwds: state.projects
-					.filter((project) => project.expanded)
-					.map((project) => project.cwd),
-			}),
-		);
-		for (const legacyKey of LEGACY_PERSISTED_STATE_KEYS) {
-			window.localStorage.removeItem(legacyKey);
-		}
-	} catch {
-		// Ignore quota/storage errors to avoid breaking chat UX.
+	if (persistTimer !== null) {
+		clearTimeout(persistTimer);
 	}
+	persistTimer = setTimeout(() => {
+		persistTimer = null;
+		try {
+			window.localStorage.setItem(
+				PERSISTED_STATE_KEY,
+				JSON.stringify({
+					expandedProjectCwds: state.projects
+						.filter((project) => project.expanded)
+						.map((project) => project.cwd),
+				}),
+			);
+		} catch {
+			// Ignore quota/storage errors to avoid breaking chat UX.
+		}
+	}, PERSIST_DEBOUNCE_MS);
 }
 
 // ── Pure helpers ──────────────────────────────────────────────────────
@@ -110,17 +130,17 @@ function mapProjectsFromReadModel(
 			id: project.id,
 			name: project.title,
 			cwd: project.workspaceRoot,
-			model:
-				existing?.model ??
-				resolveModelSlug(
-					project.defaultModel ?? DEFAULT_MODEL_BY_PROVIDER.codex,
-				),
+			model: resolveModelSlugForProvider(
+				inferProviderKindForModel(project.defaultModel),
+				project.defaultModel ?? DEFAULT_MODEL_BY_PROVIDER.codex,
+			),
 			expanded:
 				existing?.expanded ??
 				(persistedExpandedProjectCwds.size > 0
 					? persistedExpandedProjectCwds.has(project.workspaceRoot)
 					: true),
 			scripts: project.scripts.map((script) => ({ ...script })),
+			updatedAt: project.updatedAt,
 		};
 	});
 }
@@ -145,42 +165,17 @@ function toLegacySessionStatus(
 }
 
 function toLegacyProvider(providerName: string | null): ProviderKind {
-	if (providerName === "codex") {
-		return providerName;
-	}
-	if (providerName === "gemini") {
-		return providerName;
-	}
-	return "codex";
+	return isProviderKind(providerName) ? providerName : "codex";
 }
-
-const CODEX_MODEL_SLUGS = new Set<string>(
-	getModelOptions("codex").map((option) => option.slug),
-);
-
-const GEMINI_MODEL_SLUGS = new Set<string>(
-	getModelOptions("gemini").map((option) => option.slug),
-);
 
 function inferProviderForThreadModel(input: {
 	readonly model: string;
 	readonly sessionProviderName: string | null;
 }): ProviderKind {
-	if (
-		input.sessionProviderName === "codex" ||
-		input.sessionProviderName === "gemini"
-	) {
+	if (isProviderKind(input.sessionProviderName)) {
 		return input.sessionProviderName;
 	}
-	const normalizedCodex = normalizeModelSlug(input.model, "codex");
-	if (normalizedCodex && CODEX_MODEL_SLUGS.has(normalizedCodex)) {
-		return "codex";
-	}
-	const normalizedGemini = normalizeModelSlug(input.model, "gemini");
-	if (normalizedGemini && GEMINI_MODEL_SLUGS.has(normalizedGemini)) {
-		return "gemini";
-	}
-	return "codex";
+	return inferProviderKindForModel(input.model);
 }
 
 function resolveWsHttpOrigin(): string {
@@ -225,7 +220,7 @@ export function syncServerReadModel(
 	state: AppState,
 	readModel: OrchestrationReadModel,
 ): AppState {
-	const projects = mapProjectsFromReadModel(
+	const mappedProjects = mapProjectsFromReadModel(
 		readModel.projects.filter((project) => project.deletedAt === null),
 		state.projects,
 	);
@@ -310,6 +305,22 @@ export function syncServerReadModel(
 				activities: thread.activities.map((activity) => ({ ...activity })),
 			};
 		});
+
+	// Sort projects by latest thread update descending, falling back to project updatedAt
+	const projects = [...mappedProjects].sort((a, b) => {
+		const aLatestThread = threads
+			.filter((t) => t.projectId === a.id)
+			.sort((t1, t2) => t2.createdAt.localeCompare(t1.createdAt))[0];
+		const bLatestThread = threads
+			.filter((t) => t.projectId === b.id)
+			.sort((t1, t2) => t2.createdAt.localeCompare(t1.createdAt))[0];
+
+		const aTime = aLatestThread?.createdAt ?? a.updatedAt;
+		const bTime = bLatestThread?.createdAt ?? b.updatedAt;
+
+		return bTime.localeCompare(aTime);
+	});
+
 	return {
 		...state,
 		projects,
@@ -446,8 +457,33 @@ export const useStore = create<AppStore>((set) => ({
 		set((state) => setThreadBranch(state, threadId, branch, worktreePath)),
 }));
 
-// Persist on every state change
+// Persist on every state change (debounced in persistState)
 useStore.subscribe((state) => persistState(state));
+
+function flushPersistState(): void {
+	if (persistTimer !== null) {
+		clearTimeout(persistTimer);
+		persistTimer = null;
+	}
+	if (typeof window === "undefined") return;
+	const state = useStore.getState();
+	try {
+		window.localStorage.setItem(
+			PERSISTED_STATE_KEY,
+			JSON.stringify({
+				expandedProjectCwds: state.projects
+					.filter((project) => project.expanded)
+					.map((project) => project.cwd),
+			}),
+		);
+	} catch {
+		// Ignore
+	}
+}
+
+if (typeof window !== "undefined") {
+	window.addEventListener("beforeunload", flushPersistState);
+}
 
 export function StoreProvider({ children }: { children: ReactNode }) {
 	useEffect(() => {

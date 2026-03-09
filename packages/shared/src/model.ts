@@ -18,6 +18,9 @@ const MODEL_SLUG_SET_BY_PROVIDER: Record<
 	gemini: new Set(
 		MODEL_OPTIONS_BY_PROVIDER.gemini.map((option) => option.slug),
 	),
+	"claude-code": new Set(
+		MODEL_OPTIONS_BY_PROVIDER["claude-code"].map((option) => option.slug),
+	),
 };
 
 export function getModelOptions(provider: ProviderKind = "codex") {
@@ -26,6 +29,10 @@ export function getModelOptions(provider: ProviderKind = "codex") {
 
 export function getDefaultModel(provider: ProviderKind = "codex"): ModelSlug {
 	return DEFAULT_MODEL_BY_PROVIDER[provider];
+}
+
+export function isProviderKind(value: unknown): value is ProviderKind {
+	return value === "codex" || value === "gemini" || value === "claude-code";
 }
 
 export function normalizeModelSlug(
@@ -68,6 +75,21 @@ export function resolveModelSlugForProvider(
 	model: string | null | undefined,
 ): ModelSlug {
 	return resolveModelSlug(model, provider);
+}
+
+export function inferProviderKindForModel(
+	model: string | null | undefined,
+): ProviderKind {
+	for (const provider of Object.keys(
+		MODEL_OPTIONS_BY_PROVIDER,
+	) as ProviderKind[]) {
+		const normalized = normalizeModelSlug(model, provider);
+		if (normalized && MODEL_SLUG_SET_BY_PROVIDER[provider].has(normalized)) {
+			return provider;
+		}
+	}
+
+	return "codex";
 }
 
 export function getReasoningEffortOptions(

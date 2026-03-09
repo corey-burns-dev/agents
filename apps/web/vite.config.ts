@@ -1,3 +1,4 @@
+import { fileURLToPath, URL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
@@ -28,19 +29,17 @@ export default defineConfig({
 			process.env.VITE_WS_URL ?? "",
 		),
 	},
-	experimental: {
-		enableNativePlugin: true,
-	},
 	resolve: {
-		tsconfigPaths: true,
+		alias: {
+			"~": fileURLToPath(new URL("./src", import.meta.url)),
+		},
 	},
 	server: {
 		port,
 		strictPort: true,
 		hmr: {
 			// Explicit config so Vite's HMR WebSocket connects reliably
-			// inside Tauri's webview. Vite 8 uses console.debug for
-			// connection logs — enable "Verbose" in DevTools to see them.
+			// inside Tauri's webview.
 			protocol: "ws",
 			host: "localhost",
 		},
@@ -48,5 +47,8 @@ export default defineConfig({
 	build: {
 		outDir: "dist",
 		emptyOutDir: true,
+	},
+	worker: {
+		format: "es",
 	},
 });

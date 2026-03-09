@@ -150,7 +150,7 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
           updated_at AS "updatedAt",
           deleted_at AS "deletedAt"
         FROM projection_projects
-        ORDER BY created_at ASC, project_id ASC
+        ORDER BY created_at DESC, project_id DESC
       `,
 	});
 

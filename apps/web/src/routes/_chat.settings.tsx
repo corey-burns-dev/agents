@@ -70,6 +70,14 @@ const MODEL_PROVIDER_SETTINGS: Array<{
 		placeholder: "your-gemini-model-slug",
 		example: "gemini-2.5-pro-preview",
 	},
+	{
+		provider: "claude-code",
+		title: "Claude Code",
+		description:
+			"Save additional Claude model slugs for the picker and `/model` command.",
+		placeholder: "your-claude-model-slug",
+		example: "claude-sonnet-4-6-extended",
+	},
 ] as const;
 
 function SettingsRouteView() {
@@ -85,6 +93,7 @@ function SettingsRouteView() {
 	>({
 		codex: "",
 		gemini: "",
+		"claude-code": "",
 	});
 	const [customModelErrorByProvider, setCustomModelErrorByProvider] = useState<
 		Partial<Record<ProviderKind, string | null>>
@@ -94,6 +103,8 @@ function SettingsRouteView() {
 	const codexHomePath = settings.codexHomePath;
 	const geminiBinaryPath = settings.geminiBinaryPath;
 	const geminiHomePath = settings.geminiHomePath;
+	const claudeCodeBinaryPath = settings.claudeCodeBinaryPath;
+	const claudeCodeHomePath = settings.claudeCodeHomePath;
 	const codexServiceTier = settings.codexServiceTier;
 	const keybindingsConfigPath =
 		serverConfigQuery.data?.keybindingsConfigPath ?? null;
@@ -398,6 +409,87 @@ function SettingsRouteView() {
 										}
 									>
 										Reset gemini overrides
+									</Button>
+								</div>
+							</div>
+						</section>
+
+						<section className="rounded-2xl border border-border bg-card p-5">
+							<div className="mb-4">
+								<h2 className="text-sm font-medium text-foreground">
+									Claude Code
+								</h2>
+								<p className="mt-1 text-xs text-muted-foreground">
+									These overrides apply to new Claude sessions and let you use a
+									non-default Claude install or config directory.
+								</p>
+							</div>
+
+							<div className="space-y-4">
+								<label
+									htmlFor="claude-code-binary-path"
+									className="block space-y-1"
+								>
+									<span className="text-xs font-medium text-foreground">
+										Claude binary path
+									</span>
+									<Input
+										id="claude-code-binary-path"
+										value={claudeCodeBinaryPath}
+										onChange={(event) =>
+											updateSettings({
+												claudeCodeBinaryPath: event.target.value,
+											})
+										}
+										placeholder="claude"
+										spellCheck={false}
+									/>
+									<span className="text-xs text-muted-foreground">
+										Leave blank to use <code>claude</code> from your PATH.
+									</span>
+								</label>
+
+								<label
+									htmlFor="claude-code-home-path"
+									className="block space-y-1"
+								>
+									<span className="text-xs font-medium text-foreground">
+										CLAUDE_CONFIG_DIR path
+									</span>
+									<Input
+										id="claude-code-home-path"
+										value={claudeCodeHomePath}
+										onChange={(event) =>
+											updateSettings({
+												claudeCodeHomePath: event.target.value,
+											})
+										}
+										placeholder="/Users/you/.claude"
+										spellCheck={false}
+									/>
+									<span className="text-xs text-muted-foreground">
+										Optional custom Claude config directory.
+									</span>
+								</label>
+
+								<div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+									<p>
+										Binary source:{" "}
+										<span className="font-medium text-foreground">
+											{claudeCodeBinaryPath || "PATH"}
+										</span>
+									</p>
+									<Button
+										size="xs"
+										variant="outline"
+										onClick={() =>
+											updateSettings({
+												claudeCodeBinaryPath: defaults.claudeCodeBinaryPath,
+												claudeCodeHomePath: defaults.claudeCodeHomePath,
+											})
+										}
+									>
+										Reset Claude overrides
 									</Button>
 								</div>
 							</div>

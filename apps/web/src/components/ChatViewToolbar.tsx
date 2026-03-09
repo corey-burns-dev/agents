@@ -281,7 +281,13 @@ const OpenInPicker = memo(function OpenInPicker({
 		() => [
 			{ label: "Cursor", Icon: CursorIcon, value: "cursor" },
 			{ label: "VS Code", Icon: VisualStudioCode, value: "vscode" },
+			{
+				label: "VS Code Insiders",
+				Icon: VisualStudioCode,
+				value: "code-insiders",
+			},
 			{ label: "Zed", Icon: Zed, value: "zed" },
+			{ label: "Antigravity", Icon: CursorIcon, value: "antigravity" },
 			{
 				label: isMacPlatform(navigator.platform)
 					? "Finder"

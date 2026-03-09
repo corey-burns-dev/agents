@@ -25,11 +25,21 @@ interface WsRequestEnvelope {
 	};
 }
 
+const CONNECTION_CLOSED_MESSAGE = "WebSocket connection closed";
+
+export type WsConnectionState = "connected" | "connecting" | "reconnecting";
+
+type ConnectionStateListener = (state: WsConnectionState) => void;
+
 export class WsTransport {
 	private ws: WebSocket | null = null;
 	private nextId = 1;
 	private readonly pending = new Map<string, PendingRequest>();
+	private readonly sendQueue: WsRequestEnvelope[] = [];
 	private readonly listeners = new Map<string, Set<PushListener>>();
+	private readonly connectionStateListeners =
+		new Set<ConnectionStateListener>();
+	private connectionState: WsConnectionState = "connecting";
 	private reconnectAttempt = 0;
 	private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 	private disposed = false;
@@ -91,29 +101,63 @@ export class WsTransport {
 		};
 	}
 
+	getConnectionState(): WsConnectionState {
+		return this.connectionState;
+	}
+
+	subscribeConnectionState(listener: ConnectionStateListener): () => void {
+		this.connectionStateListeners.add(listener);
+		return () => {
+			this.connectionStateListeners.delete(listener);
+		};
+	}
+
 	dispose() {
 		this.disposed = true;
 		if (this.reconnectTimer !== null) {
 			clearTimeout(this.reconnectTimer);
 			this.reconnectTimer = null;
 		}
-		for (const pending of this.pending.values()) {
-			clearTimeout(pending.timeout);
-			pending.reject(new Error("Transport disposed"));
-		}
-		this.pending.clear();
+		this.rejectAllPending(new Error("Transport disposed"));
+		this.sendQueue.length = 0;
 		this.ws?.close();
 		this.ws = null;
 	}
 
+	private rejectAllPending(error: Error): void {
+		for (const pending of this.pending.values()) {
+			clearTimeout(pending.timeout);
+			pending.reject(error);
+		}
+		this.pending.clear();
+	}
+
+	private setConnectionState(state: WsConnectionState): void {
+		if (this.connectionState === state) return;
+		this.connectionState = state;
+		for (const listener of this.connectionStateListeners) {
+			try {
+				listener(state);
+			} catch {
+				// Swallow listener errors
+			}
+		}
+	}
+
 	private connect() {
 		if (this.disposed) return;
+
+		this.setConnectionState(
+			this.reconnectAttempt > 0 ? "reconnecting" : "connecting",
+		);
 
 		const ws = new WebSocket(this.url);
 
 		ws.addEventListener("open", () => {
 			this.ws = ws;
 			this.reconnectAttempt = 0;
+			this.setConnectionState("connected");
+			this.flushSendQueue();
 		});
 
 		ws.addEventListener("message", (event) => {
@@ -121,7 +165,10 @@ export class WsTransport {
 		});
 
 		ws.addEventListener("close", () => {
+			this.rejectAllPending(new Error(CONNECTION_CLOSED_MESSAGE));
+			this.sendQueue.length = 0;
 			this.ws = null;
+			this.setConnectionState("reconnecting");
 			this.scheduleReconnect();
 		});
 
@@ -175,29 +222,20 @@ export class WsTransport {
 		}
 	}
 
-	private send(message: WsRequestEnvelope) {
+	private send(message: WsRequestEnvelope): void {
 		if (this.ws?.readyState === WebSocket.OPEN) {
 			this.ws.send(JSON.stringify(message));
 			return;
 		}
+		this.sendQueue.push(message);
+	}
 
-		// If not connected, wait for connection
-		const waitForOpen = () => {
-			const check = setInterval(() => {
-				if (this.disposed) {
-					clearInterval(check);
-					return;
-				}
-				if (this.ws?.readyState === WebSocket.OPEN) {
-					clearInterval(check);
-					this.ws.send(JSON.stringify(message));
-				}
-			}, 50);
-
-			// Give up after timeout (the pending request will time out on its own)
-			setTimeout(() => clearInterval(check), REQUEST_TIMEOUT_MS);
-		};
-		waitForOpen();
+	private flushSendQueue(): void {
+		if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+		while (this.sendQueue.length > 0) {
+			const message = this.sendQueue.shift();
+			if (message) this.ws.send(JSON.stringify(message));
+		}
 	}
 
 	private scheduleReconnect() {

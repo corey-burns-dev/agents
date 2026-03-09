@@ -44,7 +44,10 @@ const LINE_COLUMN_SUFFIX_PATTERN = /:\d+(?::\d+)?$/;
 
 function shouldUseGotoFlag(editorId: EditorId, target: string): boolean {
 	return (
-		(editorId === "cursor" || editorId === "vscode") &&
+		(editorId === "cursor" ||
+			editorId === "vscode" ||
+			editorId === "code-insiders" ||
+			editorId === "antigravity") &&
 		LINE_COLUMN_SUFFIX_PATTERN.test(target)
 	);
 }

@@ -4,6 +4,7 @@ import { assert, it, vi } from "@effect/vitest";
 import { assertFailure } from "@effect/vitest/utils";
 import { Effect, Layer, Stream } from "effect";
 import { ProviderUnsupportedError } from "../Errors.ts";
+import { ClaudeCodeAdapter } from "../Services/ClaudeCodeAdapter.ts";
 import {
 	CodexAdapter,
 	type CodexAdapterShape,
@@ -34,6 +35,11 @@ const fakeGeminiAdapter = {
 	provider: "gemini" as const,
 };
 
+const fakeClaudeCodeAdapter = {
+	...fakeCodexAdapter,
+	provider: "claude-code" as const,
+};
+
 const layer = it.layer(
 	Layer.mergeAll(
 		Layer.provide(
@@ -41,6 +47,7 @@ const layer = it.layer(
 			Layer.mergeAll(
 				Layer.succeed(CodexAdapter, fakeCodexAdapter),
 				Layer.succeed(GeminiAdapter, fakeGeminiAdapter),
+				Layer.succeed(ClaudeCodeAdapter, fakeClaudeCodeAdapter),
 			),
 		),
 		NodeServices.layer,
@@ -55,7 +62,10 @@ layer("ProviderAdapterRegistryLive", (it) => {
 			assert.equal(codex, fakeCodexAdapter);
 
 			const providers = yield* registry.listProviders();
-			assert.deepEqual([...providers].sort(), ["codex", "gemini"].sort());
+			assert.deepEqual(
+				[...providers].sort(),
+				["claude-code", "codex", "gemini"].sort(),
+			);
 		}),
 	);
 

@@ -5,14 +5,10 @@ use std::sync::Mutex;
 
 use tauri::{AppHandle, Manager};
 
-fn env_or_legacy(primary: &str, legacy: &str) -> Option<String> {
-    std::env::var(primary).ok().or_else(|| std::env::var(legacy).ok())
-}
-
 /// Start the backend server subprocess and set the WebSocket URL in app state.
-/// In dev, AGENTS_DESKTOP_WS_URL (or AGENTS_DESKTOP_WS_URL) may already be set by dev-runner; then we don't spawn.
+/// In dev, AGENTS_DESKTOP_WS_URL may already be set by dev-runner; then we don't spawn.
 pub fn start_backend(app: &AppHandle) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    if let Some(ws_url) = env_or_legacy("AGENTS_DESKTOP_WS_URL", "AGENTS_DESKTOP_WS_URL") {
+    if let Ok(ws_url) = std::env::var("AGENTS_DESKTOP_WS_URL") {
         // Dev: server is started by dev-runner; URL is already in env.
         app.manage(crate::commands::WsUrlState(Mutex::new(Some(ws_url))));
         return Ok(());
@@ -23,7 +19,7 @@ pub fn start_backend(app: &AppHandle) -> Result<(), Box<dyn std::error::Error + 
     let token = generate_auth_token();
     let ws_url = format!("ws://127.0.0.1:{}/?token={}", port, token);
 
-    let state_dir = env_or_legacy("AGENTS_STATE_DIR", "AGENTS_STATE_DIR").unwrap_or_else(|| {
+    let state_dir = std::env::var("AGENTS_STATE_DIR").unwrap_or_else(|_| {
         dirs::home_dir()
             .map(|p| p.join(".agents").join("userdata").display().to_string())
             .unwrap_or_else(|| "/tmp/agents".to_string())
@@ -36,14 +32,9 @@ pub fn start_backend(app: &AppHandle) -> Result<(), Box<dyn std::error::Error + 
         .arg(&server_entry)
         .current_dir(&cwd)
         .env("AGENTS_MODE", "desktop")
-        .env("AGENTS_MODE", "desktop")
-        .env("AGENTS_NO_BROWSER", "1")
         .env("AGENTS_NO_BROWSER", "1")
         .env("AGENTS_PORT", port.to_string())
-        .env("AGENTS_PORT", port.to_string())
         .env("AGENTS_STATE_DIR", &state_dir)
-        .env("AGENTS_STATE_DIR", &state_dir)
-        .env("AGENTS_AUTH_TOKEN", &token)
         .env("AGENTS_AUTH_TOKEN", &token)
         .stdin(Stdio::null())
         .stdout(Stdio::inherit())
@@ -80,7 +71,7 @@ fn generate_auth_token() -> String {
 }
 
 fn get_node_or_bun() -> String {
-    env_or_legacy("AGENTS_DESKTOP_NODE", "AGENTS_DESKTOP_NODE").unwrap_or_else(|| {
+    std::env::var("AGENTS_DESKTOP_NODE").unwrap_or_else(|_| {
         if which::which("bun").is_ok() {
             "bun".to_string()
         } else {
@@ -92,11 +83,23 @@ fn get_node_or_bun() -> String {
 fn find_server_entry_and_cwd(
     app: &AppHandle,
 ) -> Result<(std::path::PathBuf, std::path::PathBuf), Box<dyn std::error::Error + Send + Sync>> {
+    // Flatpak: fixed path under /app
+    if std::env::var("FLATPAK").is_ok() {
+        let flatpak_dist = std::path::PathBuf::from("/app/lib/com.agents.agents/apps/server/dist");
+        let entry = flatpak_dist.join("index.mjs");
+        if entry.exists() {
+            return Ok((entry, flatpak_dist));
+        }
+    }
+
     // Bundled: resources dir may contain server (staged by build script)
     if let Ok(resource_dir) = app.path().resource_dir() {
         let candidate = resource_dir.join("apps").join("server").join("dist").join("index.mjs");
         if candidate.exists() {
-            let cwd = dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("."));
+            let cwd = candidate
+                .parent()
+                .map(std::path::Path::to_path_buf)
+                .unwrap_or_else(|| std::path::PathBuf::from("."));
             return Ok((candidate, cwd));
         }
     }

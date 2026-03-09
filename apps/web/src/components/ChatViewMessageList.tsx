@@ -1199,7 +1199,6 @@ const MessagesTimeline = memo(function MessagesTimeline({
 
 			{row.kind === "working" && (
 				<div className="flex items-center gap-2 py-0.5 pl-1.5">
-					<span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/30" />
 					<div className="flex items-center gap-2 pt-1 text-[11px] text-muted-foreground/70">
 						<span className="inline-flex items-center gap-0.75">
 							<span className="h-1 w-1 rounded-full bg-muted-foreground/30 animate-pulse" />

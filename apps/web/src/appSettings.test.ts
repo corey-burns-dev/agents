@@ -34,6 +34,15 @@ describe("normalizeCustomModelSlugs", () => {
 			),
 		).toEqual(["gemini/internal-preview"]);
 	});
+
+	it("normalizes Claude custom model slugs against Claude built-ins", () => {
+		expect(
+			normalizeCustomModelSlugs(
+				[" claude/internal-preview ", "sonnet", "claude/internal-preview"],
+				"claude-code",
+			),
+		).toEqual(["claude/internal-preview"]);
+	});
 });
 
 describe("getAppModelOptions", () => {
@@ -70,6 +79,19 @@ describe("getAppModelOptions", () => {
 			"gemini/internal-preview",
 		]);
 	});
+
+	it("appends saved Claude custom models after the built-in options", () => {
+		const options = getAppModelOptions("claude-code", [
+			"claude/internal-preview",
+		]);
+
+		expect(options.map((option) => option.slug)).toEqual([
+			"claude-sonnet-4-6",
+			"claude-opus-4-6",
+			"claude-haiku-4-5",
+			"claude/internal-preview",
+		]);
+	});
 });
 
 describe("resolveAppModelSelection", () => {
@@ -91,6 +113,16 @@ describe("resolveAppModelSelection", () => {
 				"gemini/internal-preview",
 			),
 		).toBe("gemini/internal-preview");
+	});
+
+	it("preserves saved Claude custom model slugs", () => {
+		expect(
+			resolveAppModelSelection(
+				"claude-code",
+				["claude/internal-preview"],
+				"claude/internal-preview",
+			),
+		).toBe("claude/internal-preview");
 	});
 });
 
@@ -133,6 +165,19 @@ describe("getSlashModelOptions", () => {
 			"gemini/internal-preview",
 		]);
 	});
+
+	it("includes saved Claude custom model slugs for /model command suggestions", () => {
+		const options = getSlashModelOptions(
+			"claude-code",
+			["claude/internal-preview"],
+			"preview",
+			"claude-sonnet-4-6",
+		);
+
+		expect(options.map((option) => option.slug)).toEqual([
+			"claude/internal-preview",
+		]);
+	});
 });
 
 describe("resolveAppServiceTier", () => {
@@ -159,6 +204,7 @@ describe("provider-scoped helpers", () => {
 		const settings = {
 			customCodexModels: ["codex/custom"],
 			customGeminiModels: ["gemini/custom"],
+			customClaudeCodeModels: ["claude/custom"],
 		};
 
 		expect(getCustomModelsForProvider(settings, "codex")).toEqual([
@@ -167,8 +213,16 @@ describe("provider-scoped helpers", () => {
 		expect(getCustomModelsForProvider(settings, "gemini")).toEqual([
 			"gemini/custom",
 		]);
+		expect(getCustomModelsForProvider(settings, "claude-code")).toEqual([
+			"claude/custom",
+		]);
 		expect(patchCustomModelsForProvider("gemini", ["gemini/next"])).toEqual({
 			customGeminiModels: ["gemini/next"],
+		});
+		expect(
+			patchCustomModelsForProvider("claude-code", ["claude/next"]),
+		).toEqual({
+			customClaudeCodeModels: ["claude/next"],
 		});
 	});
 
@@ -180,6 +234,8 @@ describe("provider-scoped helpers", () => {
 					codexHomePath: "",
 					geminiBinaryPath: "",
 					geminiHomePath: "",
+					claudeCodeBinaryPath: "",
+					claudeCodeHomePath: "",
 				},
 				"codex",
 			),
@@ -196,6 +252,8 @@ describe("provider-scoped helpers", () => {
 					codexHomePath: "",
 					geminiBinaryPath: "",
 					geminiHomePath: " /tmp/.gemini ",
+					claudeCodeBinaryPath: "",
+					claudeCodeHomePath: "",
 				},
 				"gemini",
 			),
@@ -212,8 +270,29 @@ describe("provider-scoped helpers", () => {
 					codexHomePath: "",
 					geminiBinaryPath: "",
 					geminiHomePath: "",
+					claudeCodeBinaryPath: " /usr/local/bin/claude ",
+					claudeCodeHomePath: " /tmp/.claude ",
 				},
-				"gemini",
+				"claude-code",
+			),
+		).toEqual({
+			claudeCode: {
+				binaryPath: "/usr/local/bin/claude",
+				homePath: "/tmp/.claude",
+			},
+		});
+
+		expect(
+			getProviderStartOptionsForProvider(
+				{
+					codexBinaryPath: "",
+					codexHomePath: "",
+					geminiBinaryPath: "",
+					geminiHomePath: "",
+					claudeCodeBinaryPath: "",
+					claudeCodeHomePath: "",
+				},
+				"claude-code",
 			),
 		).toBeUndefined();
 	});

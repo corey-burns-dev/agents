@@ -31,14 +31,7 @@
 		"resources": {
 			"../../server/dist/": "apps/server/dist/"
 		},
-		"icon": [
-			"../resources/icon.icns",
-			"../resources/icon.ico",
-			"../resources/icon.png"
-		],
-		"macOS": {
-			"minimumSystemVersion": "10.13"
-		}
+		"icon": ["../resources/icon.ico", "../resources/icon.png"]
 	},
 	"plugins": {}
 }

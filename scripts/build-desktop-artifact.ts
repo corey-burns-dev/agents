@@ -17,17 +17,11 @@ import { Command, Flag } from "effect/unstable/cli";
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process";
 import { BRAND_ASSET_PATHS } from "./lib/brand-assets.ts";
 
-const BuildPlatform = Schema.Literals(["mac", "linux", "win"]);
-const BuildArch = Schema.Literals(["arm64", "x64", "universal"]);
+const BuildPlatform = Schema.Literals(["linux", "win"]);
+const BuildArch = Schema.Literals(["arm64", "x64"]);
 
 const RepoRoot = Effect.service(Path.Path).pipe(
 	Effect.flatMap((path) => path.fromFileUrl(new URL("..", import.meta.url))),
-);
-const ProductionMacIconSource = Effect.zipWith(
-	RepoRoot,
-	Effect.service(Path.Path),
-	(repoRoot, path) =>
-		path.join(repoRoot, BRAND_ASSET_PATHS.productionMacIconPng),
 );
 const ProductionLinuxIconSource = Effect.zipWith(
 	RepoRoot,
@@ -48,7 +42,6 @@ interface PlatformConfig {
 }
 
 const PLATFORM_CONFIG: Record<typeof BuildPlatform.Type, PlatformConfig> = {
-	mac: { defaultTarget: "dmg", archChoices: ["arm64", "x64", "universal"] },
 	linux: { defaultTarget: "AppImage", archChoices: ["x64", "arm64"] },
 	win: { defaultTarget: "nsis", archChoices: ["x64", "arm64"] },
 };
@@ -68,7 +61,6 @@ interface BuildCliInput {
 function detectHostBuildPlatform(
 	hostPlatform: string,
 ): typeof BuildPlatform.Type | undefined {
-	if (hostPlatform === "darwin") return "mac";
 	if (hostPlatform === "linux") return "linux";
 	if (hostPlatform === "win32") return "win";
 	return undefined;
@@ -196,7 +188,7 @@ const resolveBuildOptions = Effect.fn("resolveBuildOptions")(function* (
 	const target = mergeOptions(
 		input.target,
 		Option.fromNullable(env.target),
-		platformConfig?.defaultTarget ?? "dmg",
+		platformConfig?.defaultTarget ?? "AppImage",
 	);
 	const arch = mergeOptions(
 		input.arch,
@@ -254,70 +246,6 @@ const runCommand = Effect.fn("runCommand")(function* (
 		});
 	}
 });
-
-function generateMacIconSet(
-	sourcePng: string,
-	targetIcns: string,
-	tmpRoot: string,
-	path: Path.Path,
-	verbose: boolean,
-) {
-	return Effect.gen(function* () {
-		const fs = yield* FileSystem.FileSystem;
-		const iconsetDir = path.join(tmpRoot, "icon.iconset");
-		yield* fs.makeDirectory(iconsetDir, { recursive: true });
-
-		const iconSizes = [16, 32, 128, 256, 512] as const;
-		for (const size of iconSizes) {
-			yield* runCommand(
-				ChildProcess.make({
-					...commandOutputOptions(verbose),
-				})`sips -z ${size} ${size} ${sourcePng} --out ${path.join(iconsetDir, `icon_${size}x${size}.png`)}`,
-			);
-
-			const retinaSize = size * 2;
-			yield* runCommand(
-				ChildProcess.make({
-					...commandOutputOptions(verbose),
-				})`sips -z ${retinaSize} ${retinaSize} ${sourcePng} --out ${path.join(iconsetDir, `icon_${size}x${size}@2x.png`)}`,
-			);
-		}
-
-		yield* runCommand(
-			ChildProcess.make({
-				...commandOutputOptions(verbose),
-			})`iconutil -c icns ${iconsetDir} -o ${targetIcns}`,
-		);
-	});
-}
-
-function stageMacIcons(stageResourcesDir: string, verbose: boolean) {
-	return Effect.gen(function* () {
-		const fs = yield* FileSystem.FileSystem;
-		const path = yield* Path.Path;
-		const iconSource = yield* ProductionMacIconSource;
-		if (!(yield* fs.exists(iconSource))) {
-			return yield* new BuildScriptError({
-				message: `Production icon source is missing at ${iconSource}`,
-			});
-		}
-
-		const tmpRoot = yield* fs.makeTempDirectoryScoped({
-			prefix: "agents-icon-build-",
-		});
-
-		const iconPngPath = path.join(stageResourcesDir, "icon.png");
-		const iconIcnsPath = path.join(stageResourcesDir, "icon.icns");
-
-		yield* runCommand(
-			ChildProcess.make({
-				...commandOutputOptions(verbose),
-			})`sips -z 512 512 ${iconSource} --out ${iconPngPath}`,
-		);
-
-		yield* generateMacIconSet(iconSource, iconIcnsPath, tmpRoot, path, verbose);
-	});
-}
 
 function stageLinuxIcons(stageResourcesDir: string) {
 	return Effect.gen(function* () {
@@ -397,16 +325,7 @@ function validateBundledClientAssets(clientDir: string) {
 }
 
 const assertPlatformBuildResources = Effect.fn("assertPlatformBuildResources")(
-	function* (
-		platform: typeof BuildPlatform.Type,
-		stageResourcesDir: string,
-		verbose: boolean,
-	) {
-		if (platform === "mac") {
-			yield* stageMacIcons(stageResourcesDir, verbose);
-			return;
-		}
-
+	function* (platform: typeof BuildPlatform.Type, stageResourcesDir: string) {
 		if (platform === "linux") {
 			yield* stageLinuxIcons(stageResourcesDir);
 			return;
@@ -434,19 +353,18 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
 		});
 	}
 
-	const desktopDir = path.join(repoRoot, "apps/desktop");
+	const desktopDir = path.join(repoRoot, "apps/desktop/tauri");
 	const desktopResourcesDir = path.join(desktopDir, "resources");
 	const serverDistDir = path.join(repoRoot, "apps/server/dist");
 	const bundledClientEntry = path.join(serverDistDir, "client/index.html");
 
+	const isFlatpak = options.target === "flatpak";
+	const buildCommand = isFlatpak ? "build:desktop:no-bundle" : "build:desktop";
+
 	if (!options.skipBuild) {
-		yield* assertPlatformBuildResources(
-			options.platform,
-			desktopResourcesDir,
-			options.verbose,
-		);
+		yield* assertPlatformBuildResources(options.platform, desktopResourcesDir);
 		yield* Effect.log(
-			"[desktop-artifact] Building desktop/server/web artifacts...",
+			`[desktop-artifact] Building desktop/server/web artifacts (${buildCommand})...`,
 		);
 		yield* runCommand(
 			ChildProcess.make({
@@ -458,26 +376,68 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
 					APPIMAGE_EXTRACT_AND_RUN: "1",
 				},
 				...commandOutputOptions(options.verbose),
-			})`bun run build:desktop`,
+			})`bun run ${buildCommand}`,
 		);
 	}
 
 	if (!(yield* fs.exists(serverDistDir))) {
 		return yield* new BuildScriptError({
-			message: `Missing server dist at ${serverDistDir}. Run 'bun run build:desktop' first.`,
+			message: `Missing server dist at ${serverDistDir}. Run 'bun run ${buildCommand}' first.`,
 		});
 	}
 	if (!(yield* fs.exists(bundledClientEntry))) {
 		return yield* new BuildScriptError({
-			message: `Missing bundled server client at ${bundledClientEntry}. Run 'bun run build:desktop' first.`,
+			message: `Missing bundled server client at ${bundledClientEntry}. Run 'bun run ${buildCommand}' first.`,
 		});
 	}
 	yield* validateBundledClientAssets(path.dirname(bundledClientEntry));
 
+	if (isFlatpak) {
+		const binaryPath = path.join(desktopDir, "src-tauri/target/release/agents");
+		if (!(yield* fs.exists(binaryPath))) {
+			return yield* new BuildScriptError({
+				message: `Missing binary at ${binaryPath}. Run 'bun run ${buildCommand}' first.`,
+			});
+		}
+		const flatpakManifest = path.join(
+			repoRoot,
+			"flatpak/com.agents.agents.yml",
+		);
+		if (!(yield* fs.exists(flatpakManifest))) {
+			return yield* new BuildScriptError({
+				message: `Missing Flatpak manifest at ${flatpakManifest}.`,
+			});
+		}
+		const flatpakBuildDir = path.join(repoRoot, "build");
+		const flatpakRepoDir = path.join(repoRoot, "repo");
+		yield* Effect.log("[desktop-artifact] Running flatpak-builder...");
+		yield* runCommand(
+			ChildProcess.make({
+				cwd: repoRoot,
+				...commandOutputOptions(options.verbose),
+			})`flatpak-builder --force-clean --repo=${flatpakRepoDir} ${flatpakBuildDir} ${flatpakManifest}`,
+		);
+		const bundleName = options.version
+			? `agents-${options.version}.flatpak`
+			: "agents.flatpak";
+		const flatpakBundlePath = path.join(options.outputDir, bundleName);
+		yield* fs.makeDirectory(options.outputDir, { recursive: true });
+		yield* runCommand(
+			ChildProcess.make({
+				cwd: repoRoot,
+				...commandOutputOptions(options.verbose),
+			})`flatpak build-bundle ${flatpakRepoDir} ${flatpakBundlePath} com.agents.agents`,
+		);
+		yield* Effect.log("[desktop-artifact] Done. Artifacts:").pipe(
+			Effect.annotateLogs({ artifacts: [flatpakBundlePath] }),
+		);
+		return;
+	}
+
 	const bundleDir = path.join(desktopDir, TAURI_BUNDLE_DIR);
 	if (!(yield* fs.exists(bundleDir))) {
 		return yield* new BuildScriptError({
-			message: `Tauri bundle directory not found at ${bundleDir}. Run 'bun run build:desktop' first.`,
+			message: `Tauri bundle directory not found at ${bundleDir}. Run 'bun run ${buildCommand}' first.`,
 		});
 	}
 
@@ -531,13 +491,13 @@ const buildDesktopArtifactCli = Command.make("build-desktop-artifact", {
 	),
 	target: Flag.string("target").pipe(
 		Flag.withDescription(
-			"Artifact target, for example dmg/AppImage/nsis (env: AGENTS_DESKTOP_TARGET).",
+			"Artifact target, for example AppImage/nsis (env: AGENTS_DESKTOP_TARGET).",
 		),
 		Flag.optional,
 	),
 	arch: Flag.choice("arch", BuildArch.literals).pipe(
 		Flag.withDescription(
-			"Build arch, for example arm64/x64/universal (env: AGENTS_DESKTOP_ARCH).",
+			"Build arch, for example arm64/x64 (env: AGENTS_DESKTOP_ARCH).",
 		),
 		Flag.optional,
 	),
