@@ -19,7 +19,7 @@ import type {
 	ProviderUserInputAnswers,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect, Stream } from "effect";
 
 export type ProviderSessionModelSwitchMode =

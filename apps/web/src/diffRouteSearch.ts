@@ -1,4 +1,4 @@
-import { TurnId } from "@agentz/contracts";
+import { TurnId } from "@agents/contracts";
 
 export interface DiffRouteSearch {
 	diff?: "1";

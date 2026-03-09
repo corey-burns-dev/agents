@@ -1,4 +1,4 @@
-import type { MessageId, TurnId } from "@agentz/contracts";
+import type { MessageId, TurnId } from "@agents/contracts";
 import {
 	measureElement as measureVirtualElement,
 	useVirtualizer,

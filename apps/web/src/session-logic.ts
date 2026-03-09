@@ -6,7 +6,7 @@ import {
 	type ProviderKind,
 	type TurnId,
 	type UserInputQuestion,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 
 import type {
 	ChatMessage,

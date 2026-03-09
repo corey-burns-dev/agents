@@ -14,7 +14,7 @@ import {
 	type RuntimeMode,
 	type ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { GeminiAccountSnapshot } from "./geminiAppServerHelpers";
 
 import {

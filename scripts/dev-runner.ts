@@ -3,7 +3,7 @@
 import { spawn, spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import path from "node:path";
-import { NetService } from "@agentz/shared/Net";
+import { NetService } from "@agents/shared/Net";
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import {
@@ -29,7 +29,7 @@ const ROOT = process.cwd();
 
 export const DEFAULT_DEV_STATE_DIR = Effect.map(
 	Effect.service(Path.Path),
-	(path) => path.join(homedir(), ".agentz", "dev"),
+	(path) => path.join(homedir(), ".agents", "dev"),
 );
 
 const DEV_MODES = ["dev", "dev:server", "dev:web", "dev:desktop"] as const;
@@ -130,8 +130,8 @@ const optionalUrlConfig = (name: string): Config.Config<URL | undefined> =>
 	);
 
 const OffsetConfig = Config.all({
-	portOffset: optionalIntegerConfig("AGENTZ_PORT_OFFSET"),
-	devInstance: optionalStringConfig("AGENTZ_DEV_INSTANCE"),
+	portOffset: optionalIntegerConfig("AGENTS_PORT_OFFSET"),
+	devInstance: optionalStringConfig("AGENTS_DEV_INSTANCE"),
 });
 
 export function resolveOffset(config: {
@@ -140,11 +140,11 @@ export function resolveOffset(config: {
 }): { readonly offset: number; readonly source: string } {
 	if (config.portOffset !== undefined) {
 		if (config.portOffset < 0) {
-			throw new Error(`Invalid AGENTZ_PORT_OFFSET: ${config.portOffset}`);
+			throw new Error(`Invalid AGENTS_PORT_OFFSET: ${config.portOffset}`);
 		}
 		return {
 			offset: config.portOffset,
-			source: `AGENTZ_PORT_OFFSET=${config.portOffset}`,
+			source: `AGENTS_PORT_OFFSET=${config.portOffset}`,
 		};
 	}
 
@@ -156,12 +156,12 @@ export function resolveOffset(config: {
 	if (/^\d+$/.test(seed)) {
 		return {
 			offset: Number(seed),
-			source: `numeric AGENTZ_DEV_INSTANCE=${seed}`,
+			source: `numeric AGENTS_DEV_INSTANCE=${seed}`,
 		};
 	}
 
 	const offset = ((Hash.string(seed) >>> 0) % MAX_HASH_OFFSET) + 1;
-	return { offset, source: `hashed AGENTZ_DEV_INSTANCE=${seed}` };
+	return { offset, source: `hashed AGENTS_DEV_INSTANCE=${seed}` };
 }
 
 function resolveStateDir(
@@ -221,78 +221,76 @@ export function createDevRunnerEnv({
 		const portStr = String(serverPort);
 		const output: NodeJS.ProcessEnv = {
 			...baseEnv,
-			AGENTZ_PORT: portStr,
-			T3CODE_PORT: portStr,
+			AGENTS_PORT: portStr,
 			PORT: String(webPort),
 			VITE_WS_URL: `ws://localhost:${serverPort}`,
 			VITE_DEV_SERVER_URL: devUrl?.toString() ?? `http://localhost:${webPort}`,
-			AGENTZ_STATE_DIR: resolvedStateDir,
-			T3CODE_STATE_DIR: resolvedStateDir,
+			AGENTS_STATE_DIR: resolvedStateDir,
 		};
 
 		if (host !== undefined) {
-			output.AGENTZ_HOST = host;
-			output.T3CODE_HOST = host;
+			output.AGENTS_HOST = host;
+			output.AGENTS_HOST = host;
 		}
 
 		if (authToken !== undefined) {
-			output.AGENTZ_AUTH_TOKEN = authToken;
-			output.T3CODE_AUTH_TOKEN = authToken;
+			output.AGENTS_AUTH_TOKEN = authToken;
+			output.AGENTS_AUTH_TOKEN = authToken;
 		} else {
-			delete output.AGENTZ_AUTH_TOKEN;
-			delete output.T3CODE_AUTH_TOKEN;
+			delete output.AGENTS_AUTH_TOKEN;
+			delete output.AGENTS_AUTH_TOKEN;
 		}
 
 		if (noBrowser !== undefined) {
 			const v = noBrowser ? "1" : "0";
-			output.AGENTZ_NO_BROWSER = v;
-			output.T3CODE_NO_BROWSER = v;
+			output.AGENTS_NO_BROWSER = v;
+			output.AGENTS_NO_BROWSER = v;
 		} else {
-			delete output.AGENTZ_NO_BROWSER;
-			delete output.T3CODE_NO_BROWSER;
+			delete output.AGENTS_NO_BROWSER;
+			delete output.AGENTS_NO_BROWSER;
 		}
 
 		if (autoBootstrapProjectFromCwd !== undefined) {
 			const v = autoBootstrapProjectFromCwd ? "1" : "0";
-			output.AGENTZ_AUTO_BOOTSTRAP_PROJECT_FROM_CWD = v;
-			output.T3CODE_AUTO_BOOTSTRAP_PROJECT_FROM_CWD = v;
+			output.AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD = v;
+			output.AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD = v;
 		} else {
-			delete output.AGENTZ_AUTO_BOOTSTRAP_PROJECT_FROM_CWD;
-			delete output.T3CODE_AUTO_BOOTSTRAP_PROJECT_FROM_CWD;
+			delete output.AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD;
+			delete output.AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD;
 		}
 
 		if (logWebSocketEvents !== undefined) {
 			const v = logWebSocketEvents ? "1" : "0";
-			output.AGENTZ_LOG_WS_EVENTS = v;
-			output.T3CODE_LOG_WS_EVENTS = v;
+			output.AGENTS_LOG_WS_EVENTS = v;
+			output.AGENTS_LOG_WS_EVENTS = v;
 		} else {
-			delete output.AGENTZ_LOG_WS_EVENTS;
-			delete output.T3CODE_LOG_WS_EVENTS;
+			delete output.AGENTS_LOG_WS_EVENTS;
+			delete output.AGENTS_LOG_WS_EVENTS;
 		}
 
 		if (mode === "dev") {
-			output.AGENTZ_MODE = "web";
-			output.T3CODE_MODE = "web";
-			delete output.AGENTZ_DESKTOP_WS_URL;
-			delete output.T3CODE_DESKTOP_WS_URL;
+			output.AGENTS_MODE = "web";
+			output.AGENTS_MODE = "web";
+			delete output.AGENTS_DESKTOP_WS_URL;
+			delete output.AGENTS_DESKTOP_WS_URL;
 		}
 
 		if (mode === "dev:server" || mode === "dev:web") {
-			output.AGENTZ_MODE = "web";
-			output.T3CODE_MODE = "web";
-			delete output.AGENTZ_DESKTOP_WS_URL;
-			delete output.T3CODE_DESKTOP_WS_URL;
+			output.AGENTS_MODE = "web";
+			output.AGENTS_MODE = "web";
+			delete output.AGENTS_DESKTOP_WS_URL;
+			delete output.AGENTS_DESKTOP_WS_URL;
 		}
 
 		if (mode === "dev:desktop") {
-			output.AGENTZ_MODE = "desktop";
-			output.T3CODE_MODE = "desktop";
+			output.AGENTS_MODE = "desktop";
+			output.AGENTS_MODE = "desktop";
 			const wsUrl = `ws://localhost:${serverPort}`;
-			output.AGENTZ_DESKTOP_WS_URL = wsUrl;
-			output.T3CODE_DESKTOP_WS_URL = wsUrl;
+			output.AGENTS_DESKTOP_WS_URL = wsUrl;
+			output.AGENTS_DESKTOP_WS_URL = wsUrl;
 			// Server in desktop dev mode shouldn't open a browser
-			output.AGENTZ_NO_BROWSER = "1";
-			output.T3CODE_NO_BROWSER = "1";
+			output.AGENTS_NO_BROWSER = "1";
+			output.AGENTS_NO_BROWSER = "1";
 		}
 
 		return output;
@@ -485,7 +483,7 @@ export function runDevRunnerWithInput(input: DevRunnerCliInput) {
 				(cause) =>
 					new DevRunnerError({
 						message:
-							"Failed to read AGENTZ_PORT_OFFSET/AGENTZ_DEV_INSTANCE configuration.",
+							"Failed to read AGENTS_PORT_OFFSET/AGENTS_DEV_INSTANCE configuration.",
 						cause,
 					}),
 			),
@@ -502,14 +500,14 @@ export function runDevRunnerWithInput(input: DevRunnerCliInput) {
 
 		const envOverrides = {
 			noBrowser:
-				readOptionalBooleanEnv("AGENTZ_NO_BROWSER") ??
-				readOptionalBooleanEnv("T3CODE_NO_BROWSER"),
+				readOptionalBooleanEnv("AGENTS_NO_BROWSER") ??
+				readOptionalBooleanEnv("AGENTS_NO_BROWSER"),
 			autoBootstrapProjectFromCwd:
-				readOptionalBooleanEnv("AGENTZ_AUTO_BOOTSTRAP_PROJECT_FROM_CWD") ??
-				readOptionalBooleanEnv("T3CODE_AUTO_BOOTSTRAP_PROJECT_FROM_CWD"),
+				readOptionalBooleanEnv("AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD") ??
+				readOptionalBooleanEnv("AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD"),
 			logWebSocketEvents:
-				readOptionalBooleanEnv("AGENTZ_LOG_WS_EVENTS") ??
-				readOptionalBooleanEnv("T3CODE_LOG_WS_EVENTS"),
+				readOptionalBooleanEnv("AGENTS_LOG_WS_EVENTS") ??
+				readOptionalBooleanEnv("AGENTS_LOG_WS_EVENTS"),
 		};
 
 		const { serverOffset, webOffset } = yield* resolveModePortOffsets({
@@ -549,7 +547,7 @@ export function runDevRunnerWithInput(input: DevRunnerCliInput) {
 				: "";
 
 		yield* Effect.logInfo(
-			`[dev-runner] mode=${input.mode} source=${source}${selectionSuffix} serverPort=${String(env.AGENTZ_PORT)} webPort=${String(env.PORT)} stateDir=${String(env.AGENTZ_STATE_DIR)}`,
+			`[dev-runner] mode=${input.mode} source=${source}${selectionSuffix} serverPort=${String(env.AGENTS_PORT)} webPort=${String(env.PORT)} stateDir=${String(env.AGENTS_STATE_DIR)}`,
 		);
 
 		if (input.dryRun) {
@@ -672,50 +670,50 @@ const devRunnerCli = Command.make("dev-runner", {
 	),
 	stateDir: Flag.string("state-dir").pipe(
 		Flag.withDescription(
-			"State directory path (forwards to AGENTZ_STATE_DIR).",
+			"State directory path (forwards to AGENTS_STATE_DIR).",
 		),
-		Flag.withFallbackConfig(optionalStringConfig("AGENTZ_STATE_DIR")),
+		Flag.withFallbackConfig(optionalStringConfig("AGENTS_STATE_DIR")),
 	),
 	authToken: Flag.string("auth-token").pipe(
-		Flag.withDescription("Auth token (forwards to AGENTZ_AUTH_TOKEN)."),
+		Flag.withDescription("Auth token (forwards to AGENTS_AUTH_TOKEN)."),
 		Flag.withAlias("token"),
-		Flag.withFallbackConfig(optionalStringConfig("AGENTZ_AUTH_TOKEN")),
+		Flag.withFallbackConfig(optionalStringConfig("AGENTS_AUTH_TOKEN")),
 	),
 	noBrowser: Flag.boolean("no-browser").pipe(
 		Flag.withDescription(
-			"Browser auto-open toggle (equivalent to AGENTZ_NO_BROWSER).",
+			"Browser auto-open toggle (equivalent to AGENTS_NO_BROWSER).",
 		),
-		Flag.withFallbackConfig(optionalBooleanConfig("AGENTZ_NO_BROWSER")),
+		Flag.withFallbackConfig(optionalBooleanConfig("AGENTS_NO_BROWSER")),
 	),
 	autoBootstrapProjectFromCwd: Flag.boolean(
 		"auto-bootstrap-project-from-cwd",
 	).pipe(
 		Flag.withDescription(
-			"Auto-bootstrap toggle (equivalent to AGENTZ_AUTO_BOOTSTRAP_PROJECT_FROM_CWD).",
+			"Auto-bootstrap toggle (equivalent to AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD).",
 		),
 		Flag.withFallbackConfig(
-			optionalBooleanConfig("AGENTZ_AUTO_BOOTSTRAP_PROJECT_FROM_CWD"),
+			optionalBooleanConfig("AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD"),
 		),
 	),
 	logWebSocketEvents: Flag.boolean("log-websocket-events").pipe(
 		Flag.withDescription(
-			"WebSocket event logging toggle (equivalent to AGENTZ_LOG_WS_EVENTS).",
+			"WebSocket event logging toggle (equivalent to AGENTS_LOG_WS_EVENTS).",
 		),
 		Flag.withAlias("log-ws-events"),
-		Flag.withFallbackConfig(optionalBooleanConfig("AGENTZ_LOG_WS_EVENTS")),
+		Flag.withFallbackConfig(optionalBooleanConfig("AGENTS_LOG_WS_EVENTS")),
 	),
 	host: Flag.string("host").pipe(
 		Flag.withDescription(
-			"Server host/interface override (forwards to AGENTZ_HOST).",
+			"Server host/interface override (forwards to AGENTS_HOST).",
 		),
-		Flag.withFallbackConfig(optionalStringConfig("AGENTZ_HOST")),
+		Flag.withFallbackConfig(optionalStringConfig("AGENTS_HOST")),
 	),
 	port: Flag.integer("port").pipe(
 		Flag.withSchema(
 			Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 65535 })),
 		),
-		Flag.withDescription("Server port override (forwards to AGENTZ_PORT)."),
-		Flag.withFallbackConfig(optionalPortConfig("AGENTZ_PORT")),
+		Flag.withDescription("Server port override (forwards to AGENTS_PORT)."),
+		Flag.withFallbackConfig(optionalPortConfig("AGENTS_PORT")),
 	),
 	devUrl: Flag.string("dev-url").pipe(
 		Flag.withSchema(Schema.URLFromString),

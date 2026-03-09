@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import type { ProviderRuntimeEvent, ProviderSession } from "@agentz/contracts";
+import type { ProviderRuntimeEvent, ProviderSession } from "@agents/contracts";
 import {
 	ApprovalRequestId,
 	CommandId,
@@ -12,7 +12,7 @@ import {
 	ProjectId,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import {
 	Effect,
@@ -97,7 +97,7 @@ describe("ProviderCommandReactor", () => {
 		const now = new Date().toISOString();
 		const stateDir =
 			input?.stateDir ??
-			fs.mkdtempSync(path.join(os.tmpdir(), "agentz-reactor-"));
+			fs.mkdtempSync(path.join(os.tmpdir(), "agents-reactor-"));
 		createdStateDirs.add(stateDir);
 		const runtimeEventPubSub = Effect.runSync(
 			PubSub.unbounded<ProviderRuntimeEvent>(),

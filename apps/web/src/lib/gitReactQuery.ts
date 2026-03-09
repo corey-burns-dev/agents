@@ -1,4 +1,4 @@
-import type { GitStackedAction } from "@agentz/contracts";
+import type { GitStackedAction } from "@agents/contracts";
 import {
 	mutationOptions,
 	type QueryClient,

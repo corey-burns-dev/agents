@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const desktopDir = resolve(__dirname, "..");
-const binName = platform() === "win32" ? "agentz.exe" : "agentz";
+const binName = platform() === "win32" ? "agents.exe" : "agents";
 const tauriTarget = resolve(desktopDir, "src-tauri/target/release", binName);
 
 console.log("\nLaunching Tauri smoke test...");

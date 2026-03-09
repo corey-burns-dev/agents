@@ -4,13 +4,13 @@ import {
 	type OrchestrationSessionStatus,
 	type ProviderKind,
 	type ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	getModelOptions,
 	normalizeModelSlug,
 	resolveModelSlug,
 	resolveModelSlugForProvider,
-} from "@agentz/shared/model";
+} from "@agents/shared/model";
 import { createElement, Fragment, type ReactNode, useEffect } from "react";
 import { create } from "zustand";
 import type { ChatMessage, Project, Thread } from "./types";
@@ -23,12 +23,12 @@ export interface AppState {
 	threadsHydrated: boolean;
 }
 
-const PERSISTED_STATE_KEY = "agentz:renderer-state:v8";
+const PERSISTED_STATE_KEY = "agents:renderer-state:v8";
 const LEGACY_PERSISTED_STATE_KEYS = [
-	"agentz:renderer-state:v6",
-	"agentz:renderer-state:v5",
-	"agentz:renderer-state:v4",
-	"agentz:renderer-state:v3",
+	"agents:renderer-state:v6",
+	"agents:renderer-state:v5",
+	"agents:renderer-state:v4",
+	"agents:renderer-state:v3",
 	"codething:renderer-state:v4",
 	"codething:renderer-state:v3",
 	"codething:renderer-state:v2",

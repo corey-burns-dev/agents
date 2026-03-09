@@ -32,4 +32,4 @@ export interface ProviderCommandReactorShape {
 export class ProviderCommandReactor extends ServiceMap.Service<
 	ProviderCommandReactor,
 	ProviderCommandReactorShape
->()("agentz/orchestration/Services/ProviderCommandReactor") {}
+>()("agents/orchestration/Services/ProviderCommandReactor") {}

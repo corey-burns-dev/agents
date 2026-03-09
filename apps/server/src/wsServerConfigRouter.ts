@@ -2,8 +2,8 @@ import type {
 	EditorId,
 	ServerProviderStatus,
 	WebSocketRequest,
-} from "@agentz/contracts";
-import { WS_METHODS } from "@agentz/contracts";
+} from "@agents/contracts";
+import { WS_METHODS } from "@agents/contracts";
 import { Effect } from "effect";
 
 import type { KeybindingsShape } from "./keybindings";

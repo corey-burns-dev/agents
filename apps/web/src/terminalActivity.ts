@@ -1,4 +1,4 @@
-import type { TerminalEvent } from "@agentz/contracts";
+import type { TerminalEvent } from "@agents/contracts";
 
 export function terminalRunningSubprocessFromEvent(
 	event: TerminalEvent,

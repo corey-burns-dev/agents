@@ -10,7 +10,7 @@ import {
 	ProjectId,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, ManagedRuntime } from "effect";
@@ -189,7 +189,9 @@ projectionLayer("OrchestrationProjectionPipeline", (it) => {
 		"stores message attachment references without mutating payloads",
 		() =>
 			Effect.sync(() =>
-				fs.mkdtempSync(path.join(os.tmpdir(), "t3-projection-attachments-")),
+				fs.mkdtempSync(
+					path.join(os.tmpdir(), "agents-projection-attachments-"),
+				),
 			).pipe(
 				Effect.flatMap((stateDir) =>
 					Effect.gen(function* () {
@@ -263,7 +265,7 @@ projectionLayer("OrchestrationProjectionPipeline", (it) => {
 
 	it.effect("preserves mixed image attachment metadata as-is", () =>
 		Effect.sync(() =>
-			fs.mkdtempSync(path.join(os.tmpdir(), "t3-projection-attachments-")),
+			fs.mkdtempSync(path.join(os.tmpdir(), "agents-projection-attachments-")),
 		).pipe(
 			Effect.flatMap((stateDir) =>
 				Effect.gen(function* () {
@@ -477,7 +479,7 @@ projectionLayer("OrchestrationProjectionPipeline", (it) => {
 		() =>
 			Effect.sync(() =>
 				fs.mkdtempSync(
-					path.join(os.tmpdir(), "t3-projection-attachments-overwrite-"),
+					path.join(os.tmpdir(), "agents-projection-attachments-overwrite-"),
 				),
 			).pipe(
 				Effect.flatMap((stateDir) =>
@@ -630,7 +632,7 @@ projectionLayer("OrchestrationProjectionPipeline", (it) => {
 		() =>
 			Effect.sync(() =>
 				fs.mkdtempSync(
-					path.join(os.tmpdir(), "t3-projection-attachments-rollback-"),
+					path.join(os.tmpdir(), "agents-projection-attachments-rollback-"),
 				),
 			).pipe(
 				Effect.flatMap((stateDir) =>
@@ -771,7 +773,7 @@ projectionLayer("OrchestrationProjectionPipeline", (it) => {
 		() =>
 			Effect.sync(() =>
 				fs.mkdtempSync(
-					path.join(os.tmpdir(), "t3-projection-attachments-revert-"),
+					path.join(os.tmpdir(), "agents-projection-attachments-revert-"),
 				),
 			).pipe(
 				Effect.flatMap((stateDir) =>
@@ -857,7 +859,7 @@ projectionLayer("OrchestrationProjectionPipeline", (it) => {
 								turnId: TurnId.makeUnsafe("turn-keep"),
 								checkpointTurnCount: 1,
 								checkpointRef: CheckpointRef.makeUnsafe(
-									"refs/agentz/checkpoints/thread-revert-files/turn/1",
+									"refs/agents/checkpoints/thread-revert-files/turn/1",
 								),
 								status: "ready",
 								files: [],
@@ -912,7 +914,7 @@ projectionLayer("OrchestrationProjectionPipeline", (it) => {
 								turnId: TurnId.makeUnsafe("turn-remove"),
 								checkpointTurnCount: 2,
 								checkpointRef: CheckpointRef.makeUnsafe(
-									"refs/agentz/checkpoints/thread-revert-files/turn/2",
+									"refs/agents/checkpoints/thread-revert-files/turn/2",
 								),
 								status: "ready",
 								files: [],
@@ -1011,7 +1013,7 @@ projectionLayer("OrchestrationProjectionPipeline", (it) => {
 	it.effect("removes thread attachment directory when thread is deleted", () =>
 		Effect.sync(() =>
 			fs.mkdtempSync(
-				path.join(os.tmpdir(), "t3-projection-attachments-delete-"),
+				path.join(os.tmpdir(), "agents-projection-attachments-delete-"),
 			),
 		).pipe(
 			Effect.flatMap((stateDir) =>
@@ -1163,7 +1165,7 @@ projectionLayer("OrchestrationProjectionPipeline", (it) => {
 	it.effect("ignores unsafe thread ids for attachment cleanup paths", () =>
 		Effect.sync(() =>
 			fs.mkdtempSync(
-				path.join(os.tmpdir(), "t3-projection-attachments-unsafe-"),
+				path.join(os.tmpdir(), "agents-projection-attachments-unsafe-"),
 			),
 		).pipe(
 			Effect.flatMap((stateDir) =>
@@ -1600,7 +1602,7 @@ projectionLayer("OrchestrationProjectionPipeline", (it) => {
 						turnId: TurnId.makeUnsafe("turn-completed"),
 						checkpointTurnCount: 1,
 						checkpointRef: CheckpointRef.makeUnsafe(
-							"refs/agentz/checkpoints/thread-conflict/turn/1",
+							"refs/agents/checkpoints/thread-conflict/turn/1",
 						),
 						status: "ready",
 						files: [],
@@ -1720,7 +1722,7 @@ projectionLayer("OrchestrationProjectionPipeline", (it) => {
 						turnId: TurnId.makeUnsafe("turn-1"),
 						checkpointTurnCount: 1,
 						checkpointRef: CheckpointRef.makeUnsafe(
-							"refs/agentz/checkpoints/thread-revert/turn/1",
+							"refs/agents/checkpoints/thread-revert/turn/1",
 						),
 						status: "ready",
 						files: [],
@@ -1766,7 +1768,7 @@ projectionLayer("OrchestrationProjectionPipeline", (it) => {
 						turnId: TurnId.makeUnsafe("turn-2"),
 						checkpointTurnCount: 2,
 						checkpointRef: CheckpointRef.makeUnsafe(
-							"refs/agentz/checkpoints/thread-revert/turn/2",
+							"refs/agents/checkpoints/thread-revert/turn/2",
 						),
 						status: "ready",
 						files: [],
@@ -1864,7 +1866,7 @@ it.effect(
 	() =>
 		Effect.gen(function* () {
 			const tempDir = fs.mkdtempSync(
-				path.join(os.tmpdir(), "t3-projection-pipeline-restart-"),
+				path.join(os.tmpdir(), "agents-projection-pipeline-restart-"),
 			);
 			const dbPath = path.join(tempDir, "orchestration.sqlite");
 			const persistenceLayer = makeSqlitePersistenceLive(dbPath);

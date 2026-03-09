@@ -59,4 +59,4 @@ export interface PtyAdapterShape {
 export class PtyAdapter extends ServiceMap.Service<
 	PtyAdapter,
 	PtyAdapterShape
->()("agentz/terminal/Services/PTY/PtyAdapter") {}
+>()("agents/terminal/Services/PTY/PtyAdapter") {}

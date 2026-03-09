@@ -12,7 +12,7 @@ import type {
 	TerminalResizeInput,
 	TerminalSessionSnapshot,
 	TerminalWriteInput,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	DEFAULT_TERMINAL_ID,
 	EDITORS,
@@ -30,7 +30,7 @@ import {
 	WS_CHANNELS,
 	WS_METHODS,
 	type WsPush,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import type { MigrationError } from "@effect/sql-sqlite-bun/SqliteMigrator";
 import {
@@ -448,7 +448,7 @@ describe("WebSocket Server", () => {
 			throw new Error("Test server is already running");
 		}
 
-		const stateDir = options.stateDir ?? makeTempDir("agentz-ws-state-");
+		const stateDir = options.stateDir ?? makeTempDir("agents-ws-state-");
 		const scope = await Effect.runPromise(Scope.make("sequential"));
 		const persistenceLayer =
 			options.persistenceLayer ?? SqlitePersistenceMemory;
@@ -563,7 +563,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("serves persisted attachments from stateDir", async () => {
-		const stateDir = makeTempDir("agentz-state-attachments-");
+		const stateDir = makeTempDir("agents-state-attachments-");
 		const attachmentPath = path.join(
 			stateDir,
 			"attachments",
@@ -589,7 +589,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("serves persisted attachments for URL-encoded paths", async () => {
-		const stateDir = makeTempDir("agentz-state-attachments-encoded-");
+		const stateDir = makeTempDir("agents-state-attachments-encoded-");
 		const attachmentPath = path.join(
 			stateDir,
 			"attachments",
@@ -615,8 +615,8 @@ describe("WebSocket Server", () => {
 	});
 
 	it("serves static index for root path", async () => {
-		const stateDir = makeTempDir("agentz-state-static-root-");
-		const staticDir = makeTempDir("agentz-static-root-");
+		const stateDir = makeTempDir("agents-state-static-root-");
+		const staticDir = makeTempDir("agents-static-root-");
 		fs.writeFileSync(
 			path.join(staticDir, "index.html"),
 			"<h1>static-root</h1>",
@@ -638,8 +638,8 @@ describe("WebSocket Server", () => {
 	});
 
 	it("rejects static path traversal attempts", async () => {
-		const stateDir = makeTempDir("agentz-state-static-traversal-");
-		const staticDir = makeTempDir("agentz-static-traversal-");
+		const stateDir = makeTempDir("agents-state-static-traversal-");
+		const staticDir = makeTempDir("agents-static-traversal-");
 		fs.writeFileSync(
 			path.join(staticDir, "index.html"),
 			"<h1>safe</h1>",
@@ -735,7 +735,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("includes bootstrap ids in welcome when cwd project and thread already exist", async () => {
-		const stateDir = makeTempDir("agentz-state-bootstrap-existing-");
+		const stateDir = makeTempDir("agents-state-bootstrap-existing-");
 		const persistenceLayer = makeSqlitePersistenceLive(
 			path.join(stateDir, "state.sqlite"),
 		).pipe(Layer.provide(NodeServices.layer));
@@ -821,7 +821,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("responds to server.getConfig", async () => {
-		const stateDir = makeTempDir("agentz-state-get-config-");
+		const stateDir = makeTempDir("agents-state-get-config-");
 		const keybindingsPath = path.join(stateDir, "keybindings.json");
 		fs.writeFileSync(keybindingsPath, "[]", "utf8");
 
@@ -851,7 +851,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("bootstraps default keybindings file when missing", async () => {
-		const stateDir = makeTempDir("agentz-state-bootstrap-keybindings-");
+		const stateDir = makeTempDir("agents-state-bootstrap-keybindings-");
 		const keybindingsPath = path.join(stateDir, "keybindings.json");
 		expect(fs.existsSync(keybindingsPath)).toBe(false);
 
@@ -884,7 +884,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("falls back to defaults and reports malformed keybindings config issues", async () => {
-		const stateDir = makeTempDir("agentz-state-malformed-keybindings-");
+		const stateDir = makeTempDir("agents-state-malformed-keybindings-");
 		const keybindingsPath = path.join(stateDir, "keybindings.json");
 		fs.writeFileSync(keybindingsPath, "{ not-json", "utf8");
 
@@ -918,7 +918,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("ignores invalid keybinding entries but keeps valid entries and reports issues", async () => {
-		const stateDir = makeTempDir("agentz-state-partial-invalid-keybindings-");
+		const stateDir = makeTempDir("agents-state-partial-invalid-keybindings-");
 		const keybindingsPath = path.join(stateDir, "keybindings.json");
 		fs.writeFileSync(
 			keybindingsPath,
@@ -976,7 +976,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("pushes server.configUpdated issues when keybindings file changes", async () => {
-		const stateDir = makeTempDir("agentz-state-keybindings-watch-");
+		const stateDir = makeTempDir("agents-state-keybindings-watch-");
 		const keybindingsPath = path.join(stateDir, "keybindings.json");
 		fs.writeFileSync(keybindingsPath, "[]", "utf8");
 
@@ -1049,7 +1049,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("reads keybindings from the configured state directory", async () => {
-		const stateDir = makeTempDir("agentz-state-keybindings-");
+		const stateDir = makeTempDir("agents-state-keybindings-");
 		const keybindingsPath = path.join(stateDir, "keybindings.json");
 		fs.writeFileSync(
 			keybindingsPath,
@@ -1088,7 +1088,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("upserts keybinding rules and updates cached server config", async () => {
-		const stateDir = makeTempDir("agentz-state-upsert-keybinding-");
+		const stateDir = makeTempDir("agents-state-upsert-keybinding-");
 		const keybindingsPath = path.join(stateDir, "keybindings.json");
 		fs.writeFileSync(
 			keybindingsPath,
@@ -1239,7 +1239,7 @@ describe("WebSocket Server", () => {
 		connections.push(ws);
 		await waitForMessage(ws);
 
-		const workspaceRoot = makeTempDir("agentz-ws-diff-project-");
+		const workspaceRoot = makeTempDir("agents-ws-diff-project-");
 		const createdAt = new Date().toISOString();
 		const createProjectResponse = await sendRequest(
 			ws,
@@ -1334,7 +1334,7 @@ describe("WebSocket Server", () => {
 		connections.push(ws);
 		await waitForMessage(ws);
 
-		const workspaceRoot = makeTempDir("agentz-ws-project-");
+		const workspaceRoot = makeTempDir("agents-ws-project-");
 		const createdAt = new Date().toISOString();
 		const createProjectResponse = await sendRequest(
 			ws,
@@ -1434,7 +1434,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("routes terminal RPC methods and broadcasts terminal events", async () => {
-		const cwd = makeTempDir("agentz-ws-terminal-cwd-");
+		const cwd = makeTempDir("agents-ws-terminal-cwd-");
 		const terminalManager = new MockTerminalManager();
 		server = await createTestServer({
 			cwd: "/test",
@@ -1614,7 +1614,7 @@ describe("WebSocket Server", () => {
 			await new Promise((resolve) => setTimeout(resolve, 50));
 			expect(unhandledRejections).toHaveLength(0);
 
-			const workspace = makeTempDir("agentz-ws-handler-still-usable-");
+			const workspace = makeTempDir("agents-ws-handler-still-usable-");
 			fs.writeFileSync(path.join(workspace, "file.txt"), "ok\n", "utf8");
 			const response = await sendRequest(ws, WS_METHODS.projectsSearchEntries, {
 				cwd: workspace,
@@ -1664,7 +1664,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("supports projects.searchEntries", async () => {
-		const workspace = makeTempDir("agentz-ws-workspace-entries-");
+		const workspace = makeTempDir("agents-ws-workspace-entries-");
 		fs.mkdirSync(path.join(workspace, "src", "components"), {
 			recursive: true,
 		});
@@ -1708,7 +1708,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("supports projects.writeFile within the workspace root", async () => {
-		const workspace = makeTempDir("agentz-ws-write-file-");
+		const workspace = makeTempDir("agents-ws-write-file-");
 
 		server = await createTestServer({ cwd: "/test" });
 		const addr = server.address();
@@ -1734,7 +1734,7 @@ describe("WebSocket Server", () => {
 	});
 
 	it("rejects projects.writeFile paths outside the workspace root", async () => {
-		const workspace = makeTempDir("agentz-ws-write-file-reject-");
+		const workspace = makeTempDir("agents-ws-write-file-reject-");
 
 		server = await createTestServer({ cwd: "/test" });
 		const addr = server.address();

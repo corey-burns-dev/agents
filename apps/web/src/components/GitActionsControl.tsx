@@ -2,7 +2,7 @@ import type {
 	GitStackedAction,
 	GitStatusResult,
 	ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	useIsMutating,
 	useMutation,

@@ -1162,7 +1162,7 @@ const makeGitCore = Effect.gen(function* () {
 			const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? "/tmp";
 			const worktreePath =
 				input.path ??
-				path.join(homeDir, ".agentz", "worktrees", repoName, sanitizedBranch);
+				path.join(homeDir, ".agents", "worktrees", repoName, sanitizedBranch);
 
 			yield* executeGit(
 				"GitCore.createWorktree",

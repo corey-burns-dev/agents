@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import {
 	sanitizeBranchFragment,
 	sanitizeFeatureBranchName,
-} from "@agentz/shared/git";
+} from "@agents/shared/git";
 import {
 	Effect,
 	FileSystem,
@@ -146,7 +146,7 @@ const makeCodexTextGeneration = Effect.gen(function* () {
 	): Effect.Effect<string, TextGenerationError> => {
 		const filePath = path.join(
 			tempDir,
-			`agentz-${prefix}-${process.pid}-${randomUUID()}.tmp`,
+			`agents-${prefix}-${process.pid}-${randomUUID()}.tmp`,
 		);
 		return fileSystem.writeFileString(filePath, content).pipe(
 			Effect.mapError(

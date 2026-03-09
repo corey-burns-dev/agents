@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { ThreadId } from "@agentz/contracts";
+import { ThreadId } from "@agents/contracts";
 import { assert, describe, it } from "@effect/vitest";
 import { Effect } from "effect";
 
@@ -31,7 +31,7 @@ describe("EventNdjsonLogger", () => {
 	it.effect("writes effect-style lines to thread-scoped files", () =>
 		Effect.gen(function* () {
 			const tempDir = fs.mkdtempSync(
-				path.join(os.tmpdir(), "t3-provider-log-"),
+				path.join(os.tmpdir(), "agents-provider-log-"),
 			);
 			const basePath = path.join(tempDir, "provider-native.ndjson");
 
@@ -94,7 +94,7 @@ describe("EventNdjsonLogger", () => {
 		() =>
 			Effect.gen(function* () {
 				const tempDir = fs.mkdtempSync(
-					path.join(os.tmpdir(), "t3-provider-log-"),
+					path.join(os.tmpdir(), "agents-provider-log-"),
 				);
 				const basePath = path.join(tempDir, "provider-canonical.ndjson");
 
@@ -143,7 +143,7 @@ describe("EventNdjsonLogger", () => {
 	it.effect("rotates per-thread files when max size is exceeded", () =>
 		Effect.gen(function* () {
 			const tempDir = fs.mkdtempSync(
-				path.join(os.tmpdir(), "t3-provider-log-"),
+				path.join(os.tmpdir(), "agents-provider-log-"),
 			);
 			const basePath = path.join(tempDir, "provider-native.ndjson");
 

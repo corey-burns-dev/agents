@@ -1,5 +1,5 @@
-import type { ProviderRuntimeEvent } from "@agentz/contracts";
-import { ThreadId } from "@agentz/contracts";
+import type { ProviderRuntimeEvent } from "@agents/contracts";
+import { ThreadId } from "@agents/contracts";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Path, Queue, Stream } from "effect";

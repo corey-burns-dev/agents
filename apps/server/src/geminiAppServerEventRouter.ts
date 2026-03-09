@@ -6,7 +6,7 @@ import {
 	type ProviderEvent,
 	type ProviderSession,
 	type ProviderUserInputAnswers,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 
 import { toGeminiUserInputAnswers } from "./geminiAppServerHelpers";
 import {

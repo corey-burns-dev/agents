@@ -152,5 +152,5 @@ export function isGeminiCliVersionSupported(_version: string): boolean {
 
 export function formatGeminiCliUpgradeMessage(version: string | null): string {
 	const versionLabel = version ? `v${version}` : "the installed version";
-	return `Gemini CLI ${versionLabel} was not recognized. Please update or restart Agentz.`;
+	return `Gemini CLI ${versionLabel} was not recognized. Please update or restart Agents.`;
 }

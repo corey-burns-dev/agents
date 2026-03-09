@@ -10,9 +10,9 @@ fn env_or_legacy(primary: &str, legacy: &str) -> Option<String> {
 }
 
 /// Start the backend server subprocess and set the WebSocket URL in app state.
-/// In dev, AGENTZ_DESKTOP_WS_URL (or T3CODE_DESKTOP_WS_URL) may already be set by dev-runner; then we don't spawn.
+/// In dev, AGENTS_DESKTOP_WS_URL (or AGENTS_DESKTOP_WS_URL) may already be set by dev-runner; then we don't spawn.
 pub fn start_backend(app: &AppHandle) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    if let Some(ws_url) = env_or_legacy("AGENTZ_DESKTOP_WS_URL", "T3CODE_DESKTOP_WS_URL") {
+    if let Some(ws_url) = env_or_legacy("AGENTS_DESKTOP_WS_URL", "AGENTS_DESKTOP_WS_URL") {
         // Dev: server is started by dev-runner; URL is already in env.
         app.manage(crate::commands::WsUrlState(Mutex::new(Some(ws_url))));
         return Ok(());
@@ -23,10 +23,10 @@ pub fn start_backend(app: &AppHandle) -> Result<(), Box<dyn std::error::Error + 
     let token = generate_auth_token();
     let ws_url = format!("ws://127.0.0.1:{}/?token={}", port, token);
 
-    let state_dir = env_or_legacy("AGENTZ_STATE_DIR", "T3CODE_STATE_DIR").unwrap_or_else(|| {
+    let state_dir = env_or_legacy("AGENTS_STATE_DIR", "AGENTS_STATE_DIR").unwrap_or_else(|| {
         dirs::home_dir()
-            .map(|p| p.join(".agentz").join("userdata").display().to_string())
-            .unwrap_or_else(|| "/tmp/agentz".to_string())
+            .map(|p| p.join(".agents").join("userdata").display().to_string())
+            .unwrap_or_else(|| "/tmp/agents".to_string())
     });
 
     let (server_entry, cwd) = find_server_entry_and_cwd(app)?;
@@ -35,16 +35,16 @@ pub fn start_backend(app: &AppHandle) -> Result<(), Box<dyn std::error::Error + 
     let child = Command::new(&node)
         .arg(&server_entry)
         .current_dir(&cwd)
-        .env("AGENTZ_MODE", "desktop")
-        .env("T3CODE_MODE", "desktop")
-        .env("AGENTZ_NO_BROWSER", "1")
-        .env("T3CODE_NO_BROWSER", "1")
-        .env("AGENTZ_PORT", port.to_string())
-        .env("T3CODE_PORT", port.to_string())
-        .env("AGENTZ_STATE_DIR", &state_dir)
-        .env("T3CODE_STATE_DIR", &state_dir)
-        .env("AGENTZ_AUTH_TOKEN", &token)
-        .env("T3CODE_AUTH_TOKEN", &token)
+        .env("AGENTS_MODE", "desktop")
+        .env("AGENTS_MODE", "desktop")
+        .env("AGENTS_NO_BROWSER", "1")
+        .env("AGENTS_NO_BROWSER", "1")
+        .env("AGENTS_PORT", port.to_string())
+        .env("AGENTS_PORT", port.to_string())
+        .env("AGENTS_STATE_DIR", &state_dir)
+        .env("AGENTS_STATE_DIR", &state_dir)
+        .env("AGENTS_AUTH_TOKEN", &token)
+        .env("AGENTS_AUTH_TOKEN", &token)
         .stdin(Stdio::null())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
@@ -80,7 +80,7 @@ fn generate_auth_token() -> String {
 }
 
 fn get_node_or_bun() -> String {
-    env_or_legacy("AGENTZ_DESKTOP_NODE", "T3CODE_DESKTOP_NODE").unwrap_or_else(|| {
+    env_or_legacy("AGENTS_DESKTOP_NODE", "AGENTS_DESKTOP_NODE").unwrap_or_else(|| {
         if which::which("bun").is_ok() {
             "bun".to_string()
         } else {
@@ -101,7 +101,7 @@ fn find_server_entry_and_cwd(
         }
     }
 
-    // Dev / monorepo: walk up from exe (e.g. .../apps/desktop/src-tauri/target/debug/agentz) to find apps/server/dist
+    // Dev / monorepo: walk up from exe (e.g. .../apps/desktop/src-tauri/target/debug/agents) to find apps/server/dist
     let exe = std::env::current_exe()?;
     let mut dir = exe.parent();
     while let Some(d) = dir {

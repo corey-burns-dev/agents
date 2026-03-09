@@ -15,7 +15,7 @@ import {
 	type OrchestrationThreadActivity,
 	ProjectScript,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Effect, Layer, Schema, Struct } from "effect";
 import * as SqlClient from "effect/unstable/sql/SqlClient";
 import * as SqlSchema from "effect/unstable/sql/SqlSchema";

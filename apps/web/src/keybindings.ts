@@ -3,7 +3,7 @@ import type {
 	KeybindingShortcut,
 	KeybindingWhenNode,
 	ResolvedKeybindingsConfig,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { isMacPlatform } from "./lib/utils";
 
 export interface ShortcutEventLike {

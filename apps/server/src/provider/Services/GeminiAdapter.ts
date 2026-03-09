@@ -29,4 +29,4 @@ export interface GeminiAdapterShape
 export class GeminiAdapter extends ServiceMap.Service<
 	GeminiAdapter,
 	GeminiAdapterShape
->()("agentz/provider/Services/GeminiAdapter") {}
+>()("agents/provider/Services/GeminiAdapter") {}

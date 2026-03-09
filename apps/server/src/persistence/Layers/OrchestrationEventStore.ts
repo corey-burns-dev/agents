@@ -10,7 +10,7 @@ import {
 	OrchestrationEventType,
 	ProjectId,
 	ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Effect, Layer, Schema, Stream } from "effect";
 import * as SqlClient from "effect/unstable/sql/SqlClient";
 import * as SqlSchema from "effect/unstable/sql/SqlSchema";

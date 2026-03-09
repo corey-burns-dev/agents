@@ -1,5 +1,5 @@
-import type { ProviderKind } from "@agentz/contracts";
-import { getModelOptions, normalizeModelSlug } from "@agentz/shared/model";
+import type { ProviderKind } from "@agents/contracts";
+import { getModelOptions, normalizeModelSlug } from "@agents/shared/model";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { ZapIcon } from "lucide-react";
@@ -213,7 +213,7 @@ function SettingsRouteView() {
 									Appearance
 								</h2>
 								<p className="mt-1 text-xs text-muted-foreground">
-									Choose how Agentz handles light and dark mode.
+									Choose how Agents handles light and dark mode.
 								</p>
 							</div>
 

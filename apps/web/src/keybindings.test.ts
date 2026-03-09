@@ -3,7 +3,7 @@ import type {
 	KeybindingShortcut,
 	KeybindingWhenNode,
 	ResolvedKeybindingsConfig,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { assert, describe, it } from "vitest";
 import {
 	formatShortcutLabel,

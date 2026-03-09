@@ -8,7 +8,7 @@ import type {
 	ProviderSendTurnInput,
 	ProviderSession,
 	ProviderTurnStartResult,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	ApprovalRequestId,
 	EventId,
@@ -16,7 +16,7 @@ import {
 	type ProviderSessionStartInput,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it, vi } from "@effect/vitest";
 import { assertFailure } from "@effect/vitest/utils";
@@ -272,7 +272,7 @@ it.effect(
 	() =>
 		Effect.gen(function* () {
 			const tempDir = fs.mkdtempSync(
-				path.join(os.tmpdir(), "t3-provider-service-"),
+				path.join(os.tmpdir(), "agents-provider-service-"),
 			);
 			const dbPath = path.join(tempDir, "orchestration.sqlite");
 
@@ -344,7 +344,7 @@ it.effect(
 	() =>
 		Effect.gen(function* () {
 			const tempDir = fs.mkdtempSync(
-				path.join(os.tmpdir(), "t3-provider-service-restart-"),
+				path.join(os.tmpdir(), "agents-provider-service-restart-"),
 			);
 			const dbPath = path.join(tempDir, "orchestration.sqlite");
 			const persistenceLayer = makeSqlitePersistenceLive(dbPath);

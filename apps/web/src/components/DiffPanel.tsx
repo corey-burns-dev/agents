@@ -1,4 +1,4 @@
-import { ThreadId, type TurnId } from "@agentz/contracts";
+import { ThreadId, type TurnId } from "@agents/contracts";
 import { parsePatchFiles } from "@pierre/diffs";
 import {
 	FileDiff,

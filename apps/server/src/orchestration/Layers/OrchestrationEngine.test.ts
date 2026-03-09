@@ -7,7 +7,7 @@ import {
 	ProjectId,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { Effect, Layer, ManagedRuntime, Queue, Stream } from "effect";
 import { describe, expect, it } from "vitest";
@@ -261,7 +261,7 @@ describe("OrchestrationEngine", () => {
 				turnId: asTurnId("turn-1"),
 				completedAt: createdAt,
 				checkpointRef: asCheckpointRef(
-					"refs/agentz/checkpoints/thread-turn-diff/turn/1",
+					"refs/agents/checkpoints/thread-turn-diff/turn/1",
 				),
 				status: "ready",
 				files: [],
@@ -278,7 +278,7 @@ describe("OrchestrationEngine", () => {
 				turnId: asTurnId("turn-1"),
 				checkpointTurnCount: 1,
 				checkpointRef: asCheckpointRef(
-					"refs/agentz/checkpoints/thread-turn-diff/turn/1",
+					"refs/agents/checkpoints/thread-turn-diff/turn/1",
 				),
 				status: "ready",
 				files: [],

@@ -9,7 +9,7 @@
  *
  * @module OrchestrationEventStore
  */
-import type { OrchestrationEvent } from "@agentz/contracts";
+import type { OrchestrationEvent } from "@agents/contracts";
 import type { Effect, Stream } from "effect";
 import { ServiceMap } from "effect";
 
@@ -70,4 +70,4 @@ export interface OrchestrationEventStoreShape {
 export class OrchestrationEventStore extends ServiceMap.Service<
 	OrchestrationEventStore,
 	OrchestrationEventStoreShape
->()("agentz/persistence/Services/OrchestrationEventStore") {}
+>()("agents/persistence/Services/OrchestrationEventStore") {}

@@ -2,7 +2,7 @@ import {
 	type OpenInEditorInput,
 	type WebSocketRequest,
 	WS_METHODS,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Effect } from "effect";
 
 import type { OpenShape } from "./open";

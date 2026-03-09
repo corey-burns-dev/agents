@@ -15,7 +15,7 @@ import {
 	OrchestrationCheckpointStatus,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect } from "effect";
 import { type Option, Schema, ServiceMap } from "effect";
 
@@ -169,4 +169,4 @@ export interface ProjectionTurnRepositoryShape {
 export class ProjectionTurnRepository extends ServiceMap.Service<
 	ProjectionTurnRepository,
 	ProjectionTurnRepositoryShape
->()("agentz/persistence/Services/ProjectionTurns/ProjectionTurnRepository") {}
+>()("agents/persistence/Services/ProjectionTurns/ProjectionTurnRepository") {}

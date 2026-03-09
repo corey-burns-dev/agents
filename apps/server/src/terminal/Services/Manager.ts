@@ -15,7 +15,7 @@ import type {
 	TerminalSessionSnapshot,
 	TerminalSessionStatus,
 	TerminalWriteInput,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { type Effect, Schema, ServiceMap } from "effect";
 import type { PtyProcess } from "./PTY";
 
@@ -128,4 +128,4 @@ export interface TerminalManagerShape {
 export class TerminalManager extends ServiceMap.Service<
 	TerminalManager,
 	TerminalManagerShape
->()("agentz/terminal/Services/Manager/TerminalManager") {}
+>()("agents/terminal/Services/Manager/TerminalManager") {}

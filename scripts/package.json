@@ -1,5 +1,5 @@
 {
-	"name": "@agentz/scripts",
+	"name": "@agents/scripts",
 	"private": true,
 	"type": "module",
 	"scripts": {
@@ -9,8 +9,8 @@
 	},
 	"dependencies": {
 		"@effect/platform-node": "catalog:",
-		"@agentz/contracts": "workspace:*",
-		"@agentz/shared": "workspace:*",
+		"@agents/contracts": "workspace:*",
+		"@agents/shared": "workspace:*",
 		"effect": "catalog:"
 	},
 	"devDependencies": {

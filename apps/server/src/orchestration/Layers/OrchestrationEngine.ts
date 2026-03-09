@@ -4,7 +4,7 @@ import type {
 	OrchestrationReadModel,
 	ProjectId,
 	ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	Deferred,
 	Effect,

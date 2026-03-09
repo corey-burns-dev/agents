@@ -1,4 +1,4 @@
-import { type WebSocketRequest, WS_METHODS } from "@agentz/contracts";
+import { type WebSocketRequest, WS_METHODS } from "@agents/contracts";
 import { Effect } from "effect";
 
 import type { GitCoreShape } from "./git/Services/GitCore.ts";

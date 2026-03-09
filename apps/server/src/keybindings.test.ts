@@ -2,7 +2,7 @@ import {
 	type KeybindingCommand,
 	type KeybindingRule,
 	KeybindingsConfig,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it } from "@effect/vitest";
 import { assertFailure } from "@effect/vitest/utils";
@@ -30,7 +30,7 @@ const makeKeybindingsLayer = () =>
 					const fs = yield* FileSystem.FileSystem;
 					const { join } = yield* Path.Path;
 					const dir = yield* fs.makeTempDirectoryScoped({
-						prefix: "agentz-server-config-test-",
+						prefix: "agents-server-config-test-",
 					});
 					const configPath = join(dir, "keybindings.json");
 					return { keybindingsConfigPath: configPath } as ServerConfigShape;

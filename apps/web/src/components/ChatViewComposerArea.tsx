@@ -6,11 +6,11 @@ import type {
 	ProviderApprovalDecision,
 	ProviderKind,
 	ProviderUserInputAnswers,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	getDefaultReasoningEffort,
 	normalizeModelSlug,
-} from "@agentz/shared/model";
+} from "@agents/shared/model";
 import {
 	BotIcon,
 	ChevronDownIcon,

@@ -19,7 +19,7 @@ import type {
 	GitRemoveWorktreeInput,
 	GitStatusInput,
 	GitStatusResult,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect, Scope } from "effect";
 import { ServiceMap } from "effect";
 
@@ -183,5 +183,5 @@ export interface GitCoreShape {
  * GitCore - Service tag for low-level Git repository operations.
  */
 export class GitCore extends ServiceMap.Service<GitCore, GitCoreShape>()(
-	"agentz/git/Services/GitCore",
+	"agents/git/Services/GitCore",
 ) {}

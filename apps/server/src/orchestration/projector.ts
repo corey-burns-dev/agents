@@ -2,13 +2,13 @@ import type {
 	OrchestrationEvent,
 	OrchestrationReadModel,
 	ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	OrchestrationCheckpointSummary,
 	OrchestrationMessage,
 	OrchestrationSession,
 	OrchestrationThread,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Effect, Schema } from "effect";
 
 import {

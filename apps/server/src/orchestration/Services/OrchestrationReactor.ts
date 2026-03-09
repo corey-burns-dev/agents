@@ -29,4 +29,4 @@ export interface OrchestrationReactorShape {
 export class OrchestrationReactor extends ServiceMap.Service<
 	OrchestrationReactor,
 	OrchestrationReactorShape
->()("agentz/orchestration/Services/OrchestrationReactor") {}
+>()("agents/orchestration/Services/OrchestrationReactor") {}

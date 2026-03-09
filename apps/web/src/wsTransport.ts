@@ -1,4 +1,4 @@
-import { WebSocketResponse, WsPush, WsResponse } from "@agentz/contracts";
+import { WebSocketResponse, WsPush, WsResponse } from "@agents/contracts";
 import { Cause, Schema } from "effect";
 
 type PushListener = (data: unknown) => void;

@@ -1,4 +1,4 @@
-import type { GitStatusResult } from "@agentz/contracts";
+import type { GitStatusResult } from "@agents/contracts";
 import { assert, describe, it } from "vitest";
 import {
 	buildGitActionProgressStages,

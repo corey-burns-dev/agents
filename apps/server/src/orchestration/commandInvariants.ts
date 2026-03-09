@@ -5,7 +5,7 @@ import type {
 	OrchestrationThread,
 	ProjectId,
 	ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Effect } from "effect";
 
 import { OrchestrationCommandInvariantError } from "./Errors.ts";

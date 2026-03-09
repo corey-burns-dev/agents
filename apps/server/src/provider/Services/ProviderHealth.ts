@@ -6,7 +6,7 @@
  *
  * @module ProviderHealth
  */
-import type { ServerProviderStatus } from "@agentz/contracts";
+import type { ServerProviderStatus } from "@agents/contracts";
 import type { Effect } from "effect";
 import { ServiceMap } from "effect";
 
@@ -20,4 +20,4 @@ export interface ProviderHealthShape {
 export class ProviderHealth extends ServiceMap.Service<
 	ProviderHealth,
 	ProviderHealthShape
->()("agentz/provider/Services/ProviderHealth") {}
+>()("agents/provider/Services/ProviderHealth") {}

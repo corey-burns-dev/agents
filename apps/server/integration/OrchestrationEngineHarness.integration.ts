@@ -6,7 +6,7 @@ import {
 	ApprovalRequestId,
 	type OrchestrationEvent,
 	type OrchestrationThread,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import {
 	Effect,
@@ -233,7 +233,7 @@ export const makeOrchestrationIntegrationHarness = (
 				} as typeof ProviderAdapterRegistry.Service)
 			: null;
 		const rootDir = fs.mkdtempSync(
-			path.join(os.tmpdir(), "t3-orchestration-integration-"),
+			path.join(os.tmpdir(), "agents-orchestration-integration-"),
 		);
 		const workspaceDir = path.join(rootDir, "workspace");
 		const stateDir = path.join(rootDir, "state");

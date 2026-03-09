@@ -18,7 +18,7 @@ import {
 	ThreadTurnDiffCompletedPayload as ContractsThreadTurnDiffCompletedPayloadSchema,
 	ThreadTurnInterruptRequestedPayload as ContractsThreadTurnInterruptRequestedPayloadSchema,
 	ThreadTurnStartRequestedPayload as ContractsThreadTurnStartRequestedPayloadSchema,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 
 // Server-internal alias surface, backed by contract schemas as the source of truth.
 export const ProjectCreatedPayload = ContractsProjectCreatedPayloadSchema;

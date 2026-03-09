@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { ThreadId } from "@agentz/contracts";
+import { ThreadId } from "@agents/contracts";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it } from "@effect/vitest";
 import { assertFailure, assertSome } from "@effect/vitest/utils";
@@ -207,7 +207,7 @@ it.layer(makeDirectoryLayer(SqlitePersistenceMemory))(
 		it("rehydrates persisted mappings across layer restart", () =>
 			Effect.gen(function* () {
 				const tempDir = fs.mkdtempSync(
-					path.join(os.tmpdir(), "t3-provider-directory-"),
+					path.join(os.tmpdir(), "agents-provider-directory-"),
 				);
 				const dbPath = path.join(tempDir, "orchestration.sqlite");
 				const directoryLayer = makeDirectoryLayer(

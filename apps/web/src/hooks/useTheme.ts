@@ -6,7 +6,7 @@ type ThemeSnapshot = {
 	systemDark: boolean;
 };
 
-const STORAGE_KEY = "agentz:theme";
+const STORAGE_KEY = "agents:theme";
 const MEDIA_QUERY = "(prefers-color-scheme: dark)";
 
 let listeners: Array<() => void> = [];

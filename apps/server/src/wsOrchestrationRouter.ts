@@ -2,8 +2,8 @@ import type {
 	ClientOrchestrationCommand,
 	OrchestrationCommand,
 	WebSocketRequest,
-} from "@agentz/contracts";
-import { ORCHESTRATION_WS_METHODS } from "@agentz/contracts";
+} from "@agents/contracts";
+import { ORCHESTRATION_WS_METHODS } from "@agents/contracts";
 import { Effect, Stream } from "effect";
 import { clamp } from "effect/Number";
 

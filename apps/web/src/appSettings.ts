@@ -2,16 +2,16 @@ import type {
 	ProviderKind,
 	ProviderServiceTier,
 	ProviderStartOptions,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	getDefaultModel,
 	getModelOptions,
 	normalizeModelSlug,
-} from "@agentz/shared/model";
+} from "@agents/shared/model";
 import { Option, Schema } from "effect";
 import { useCallback, useSyncExternalStore } from "react";
 
-const APP_SETTINGS_STORAGE_KEY = "agentz:app-settings:v1";
+const APP_SETTINGS_STORAGE_KEY = "agents:app-settings:v1";
 const MAX_CUSTOM_MODEL_COUNT = 32;
 export const MAX_CUSTOM_MODEL_LENGTH = 256;
 export const APP_SERVICE_TIER_OPTIONS = [

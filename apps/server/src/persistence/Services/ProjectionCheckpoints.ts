@@ -15,7 +15,7 @@ import {
 	OrchestrationCheckpointStatus,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect } from "effect";
 import { type Option, Schema, ServiceMap } from "effect";
 
@@ -100,5 +100,5 @@ export class ProjectionCheckpointRepository extends ServiceMap.Service<
 	ProjectionCheckpointRepository,
 	ProjectionCheckpointRepositoryShape
 >()(
-	"agentz/persistence/Services/ProjectionCheckpoints/ProjectionCheckpointRepository",
+	"agents/persistence/Services/ProjectionCheckpoints/ProjectionCheckpointRepository",
 ) {}

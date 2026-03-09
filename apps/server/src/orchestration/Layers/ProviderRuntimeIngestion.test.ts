@@ -5,7 +5,7 @@ import path from "node:path";
 import type {
 	OrchestrationReadModel,
 	ProviderRuntimeEvent,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	ApprovalRequestId,
 	CommandId,
@@ -16,7 +16,7 @@ import {
 	ProviderItemId,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import {
 	Effect,
@@ -164,7 +164,7 @@ describe("ProviderRuntimeIngestion", () => {
 	});
 
 	async function createHarness() {
-		const workspaceRoot = makeTempDir("t3-provider-project-");
+		const workspaceRoot = makeTempDir("agents-provider-project-");
 		fs.mkdirSync(path.join(workspaceRoot, ".git"));
 		const provider = createProviderServiceHarness();
 		const orchestrationLayer = OrchestrationEngineLive.pipe(

@@ -9,7 +9,7 @@ import {
 	type ProviderRuntimeEvent,
 	type ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	Cache,
 	Cause,
@@ -49,8 +49,8 @@ const BUFFERED_PROPOSED_PLAN_BY_ID_CACHE_CAPACITY = 10_000;
 const BUFFERED_PROPOSED_PLAN_BY_ID_TTL = Duration.minutes(120);
 const MAX_BUFFERED_ASSISTANT_CHARS = 24_000;
 const STRICT_PROVIDER_LIFECYCLE_GUARD =
-	(process.env.AGENTZ_STRICT_PROVIDER_LIFECYCLE_GUARD ??
-		process.env.T3CODE_STRICT_PROVIDER_LIFECYCLE_GUARD) !== "0";
+	(process.env.AGENTS_STRICT_PROVIDER_LIFECYCLE_GUARD ??
+		process.env.AGENTS_STRICT_PROVIDER_LIFECYCLE_GUARD) !== "0";
 
 type TurnStartRequestedDomainEvent = Extract<
 	OrchestrationEvent,

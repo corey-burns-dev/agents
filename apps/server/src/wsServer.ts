@@ -23,7 +23,7 @@ import {
 	WS_CHANNELS,
 	WsPush,
 	WsResponse,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import Mime from "@effect/platform-node/Mime";
 import * as NodeHttpServer from "@effect/platform-node/NodeHttpServer";
 import {
@@ -100,7 +100,7 @@ export interface ServerShape {
  * Server - Service tag for HTTP/WebSocket lifecycle management.
  */
 export class Server extends ServiceMap.Service<Server, ServerShape>()(
-	"agentz/wsServer/Server",
+	"agents/wsServer/Server",
 ) {}
 
 const isServerNotRunningError = (error: unknown): boolean => {

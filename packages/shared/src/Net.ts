@@ -117,7 +117,7 @@ export interface NetServiceShape {
 export class NetService extends ServiceMap.Service<
 	NetService,
 	NetServiceShape
->()("@agentz/shared/Net/NetService") {
+>()("@agents/shared/Net/NetService") {
 	static readonly layer = Layer.sync(NetService, () => {
 		/**
 		 * Returns true when a TCP server can bind to {host, port}.

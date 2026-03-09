@@ -20,7 +20,7 @@ import {
 	ProviderSessionStartInput,
 	ProviderStopSessionInput,
 	ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	Effect,
 	Layer,

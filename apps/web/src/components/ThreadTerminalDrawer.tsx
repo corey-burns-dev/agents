@@ -1,4 +1,4 @@
-import type { ThreadId } from "@agentz/contracts";
+import type { ThreadId } from "@agents/contracts";
 import { FitAddon } from "@xterm/addon-fit";
 import { type ITheme, Terminal } from "@xterm/xterm";
 import {

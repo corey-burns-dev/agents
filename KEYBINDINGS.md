@@ -1,8 +1,8 @@
 # Keybindings
 
-Agentz reads keybindings from:
+Agents reads keybindings from:
 
-- `~/.agentz/keybindings.json`
+- `~/.agents/keybindings.json`
 
 The file must be a JSON array of rules:
 

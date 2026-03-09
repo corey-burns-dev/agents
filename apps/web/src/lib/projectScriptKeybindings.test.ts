@@ -1,7 +1,7 @@
 import {
 	type KeybindingCommand,
 	MAX_KEYBINDING_VALUE_LENGTH,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { describe, expect, it } from "vitest";
 
 import { commandForProjectScript } from "../projectScripts";

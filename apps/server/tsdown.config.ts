@@ -9,7 +9,7 @@ export default defineConfig({
 	outDir: "dist",
 	sourcemap: true,
 	clean: true,
-	noExternal: (id) => id.startsWith("@agentz/"),
+	noExternal: (id) => id.startsWith("@agents/"),
 	inlineOnly: false,
 	banner: {
 		js: "#!/usr/bin/env node\n",

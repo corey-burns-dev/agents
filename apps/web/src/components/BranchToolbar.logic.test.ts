@@ -1,4 +1,4 @@
-import type { GitBranch } from "@agentz/contracts";
+import type { GitBranch } from "@agents/contracts";
 import { describe, expect, it } from "vitest";
 import {
 	dedupeRemoteBranchesWithLocalMatches,
@@ -12,7 +12,7 @@ describe("resolveDraftEnvModeAfterBranchChange", () => {
 		expect(
 			resolveDraftEnvModeAfterBranchChange({
 				nextWorktreePath: null,
-				currentWorktreePath: "/repo/.agentz/worktrees/feature-a",
+				currentWorktreePath: "/repo/.agents/worktrees/feature-a",
 				effectiveEnvMode: "worktree",
 			}),
 		).toBe("local");
@@ -31,7 +31,7 @@ describe("resolveDraftEnvModeAfterBranchChange", () => {
 	it("uses worktree mode when selecting a branch already attached to a worktree", () => {
 		expect(
 			resolveDraftEnvModeAfterBranchChange({
-				nextWorktreePath: "/repo/.agentz/worktrees/feature-a",
+				nextWorktreePath: "/repo/.agents/worktrees/feature-a",
 				currentWorktreePath: null,
 				effectiveEnvMode: "local",
 			}),

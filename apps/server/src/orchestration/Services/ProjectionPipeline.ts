@@ -6,7 +6,7 @@
  *
  * @module OrchestrationProjectionPipeline
  */
-import type { OrchestrationEvent } from "@agentz/contracts";
+import type { OrchestrationEvent } from "@agents/contracts";
 import type { Effect } from "effect";
 import { ServiceMap } from "effect";
 
@@ -40,5 +40,5 @@ export class OrchestrationProjectionPipeline extends ServiceMap.Service<
 	OrchestrationProjectionPipeline,
 	OrchestrationProjectionPipelineShape
 >()(
-	"agentz/orchestration/Services/ProjectionPipeline/OrchestrationProjectionPipeline",
+	"agents/orchestration/Services/ProjectionPipeline/OrchestrationProjectionPipeline",
 ) {}

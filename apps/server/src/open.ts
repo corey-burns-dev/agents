@@ -10,7 +10,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { accessSync, constants, statSync } from "node:fs";
 import { extname, join } from "node:path";
 
-import { EDITORS, type EditorId } from "@agentz/contracts";
+import { EDITORS, type EditorId } from "@agents/contracts";
 import { Effect, Layer, Schema, ServiceMap } from "effect";
 
 // ==============================
@@ -222,7 +222,7 @@ export interface OpenShape {
  * Open - Service tag for browser/editor launch operations.
  */
 export class Open extends ServiceMap.Service<Open, OpenShape>()(
-	"agentz/open",
+	"agents/open",
 ) {}
 
 // ==============================

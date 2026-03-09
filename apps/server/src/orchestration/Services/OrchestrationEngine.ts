@@ -14,7 +14,7 @@ import type {
 	OrchestrationCommand,
 	OrchestrationEvent,
 	OrchestrationReadModel,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect, Stream } from "effect";
 import { ServiceMap } from "effect";
 import type { OrchestrationEventStoreError } from "../../persistence/Errors.ts";
@@ -81,5 +81,5 @@ export class OrchestrationEngineService extends ServiceMap.Service<
 	OrchestrationEngineService,
 	OrchestrationEngineShape
 >()(
-	"agentz/orchestration/Services/OrchestrationEngine/OrchestrationEngineService",
+	"agents/orchestration/Services/OrchestrationEngine/OrchestrationEngineService",
 ) {}

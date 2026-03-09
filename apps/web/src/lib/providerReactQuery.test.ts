@@ -1,4 +1,4 @@
-import { type NativeApi, ThreadId } from "@agentz/contracts";
+import { type NativeApi, ThreadId } from "@agents/contracts";
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as nativeApi from "../nativeApi";

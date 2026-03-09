@@ -6,7 +6,7 @@
  *
  * @module ProjectionSnapshotQuery
  */
-import type { OrchestrationReadModel } from "@agentz/contracts";
+import type { OrchestrationReadModel } from "@agents/contracts";
 import type { Effect } from "effect";
 import { ServiceMap } from "effect";
 
@@ -34,4 +34,4 @@ export interface ProjectionSnapshotQueryShape {
 export class ProjectionSnapshotQuery extends ServiceMap.Service<
 	ProjectionSnapshotQuery,
 	ProjectionSnapshotQueryShape
->()("agentz/orchestration/Services/ProjectionSnapshotQuery") {}
+>()("agents/orchestration/Services/ProjectionSnapshotQuery") {}

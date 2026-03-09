@@ -29,4 +29,4 @@ export interface CodexAdapterShape
 export class CodexAdapter extends ServiceMap.Service<
 	CodexAdapter,
 	CodexAdapterShape
->()("agentz/provider/Services/CodexAdapter") {}
+>()("agents/provider/Services/CodexAdapter") {}

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import {
 	resolveAutoFeatureBranchName,
 	sanitizeFeatureBranchName,
-} from "@agentz/shared/git";
+} from "@agents/shared/git";
 import { Effect, FileSystem, Layer, Path } from "effect";
 
 import { GitManagerError } from "../Errors.ts";
@@ -431,7 +431,7 @@ export const makeGitManager = Effect.gen(function* () {
 
 			const bodyFile = path.join(
 				tempDir,
-				`agentz-pr-body-${process.pid}-${randomUUID()}.md`,
+				`agents-pr-body-${process.pid}-${randomUUID()}.md`,
 			);
 			yield* fileSystem
 				.writeFileString(bodyFile, generated.body)

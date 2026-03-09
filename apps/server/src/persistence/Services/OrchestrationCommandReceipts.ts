@@ -14,7 +14,7 @@ import {
 	OrchestrationCommandReceiptStatus,
 	ProjectId,
 	ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect } from "effect";
 import { type Option, Schema, ServiceMap } from "effect";
 
@@ -68,5 +68,5 @@ export class OrchestrationCommandReceiptRepository extends ServiceMap.Service<
 	OrchestrationCommandReceiptRepository,
 	OrchestrationCommandReceiptRepositoryShape
 >()(
-	"agentz/persistence/Services/OrchestrationCommandReceipts/OrchestrationCommandReceiptRepository",
+	"agents/persistence/Services/OrchestrationCommandReceipts/OrchestrationCommandReceiptRepository",
 ) {}

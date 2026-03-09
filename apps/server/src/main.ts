@@ -7,7 +7,7 @@
  * @module CliConfig
  */
 
-import { NetService } from "@agentz/shared/Net";
+import { NetService } from "@agents/shared/Net";
 import {
 	Config,
 	Data,
@@ -82,7 +82,7 @@ export interface CliConfigShape {
  * CliConfig - Service tag for startup CLI/runtime helpers.
  */
 export class CliConfig extends ServiceMap.Service<CliConfig, CliConfigShape>()(
-	"agentz/main/CliConfig",
+	"agents/main/CliConfig",
 ) {
 	static readonly layer = Layer.effect(
 		CliConfig,
@@ -101,7 +101,7 @@ export class CliConfig extends ServiceMap.Service<CliConfig, CliConfigShape>()(
 	);
 }
 
-/** Prefer AGENTZ_* env, fall back to legacy T3CODE_* for compatibility. */
+/** Prefer AGENTS_* env, fall back to legacy AGENTS_* for compatibility. */
 const stringWithLegacy = (primary: string, legacy: string) =>
 	Config.all({
 		a: Config.string(primary).pipe(Config.option),
@@ -140,22 +140,22 @@ const urlWithLegacy = (primary: string, legacy: string) =>
 	);
 
 const CliEnvConfig = Config.all({
-	mode: stringWithLegacy("AGENTZ_MODE", "T3CODE_MODE").pipe(
+	mode: stringWithLegacy("AGENTS_MODE", "AGENTS_MODE").pipe(
 		Config.map((value) => (value === "desktop" ? "desktop" : "web")),
 	),
-	port: portWithLegacy("AGENTZ_PORT", "T3CODE_PORT"),
-	host: stringWithLegacy("AGENTZ_HOST", "T3CODE_HOST"),
-	stateDir: stringWithLegacy("AGENTZ_STATE_DIR", "T3CODE_STATE_DIR"),
+	port: portWithLegacy("AGENTS_PORT", "AGENTS_PORT"),
+	host: stringWithLegacy("AGENTS_HOST", "AGENTS_HOST"),
+	stateDir: stringWithLegacy("AGENTS_STATE_DIR", "AGENTS_STATE_DIR"),
 	devUrl: urlWithLegacy("VITE_DEV_SERVER_URL", "VITE_DEV_SERVER_URL"),
-	noBrowser: booleanWithLegacy("AGENTZ_NO_BROWSER", "T3CODE_NO_BROWSER"),
-	authToken: stringWithLegacy("AGENTZ_AUTH_TOKEN", "T3CODE_AUTH_TOKEN"),
+	noBrowser: booleanWithLegacy("AGENTS_NO_BROWSER", "AGENTS_NO_BROWSER"),
+	authToken: stringWithLegacy("AGENTS_AUTH_TOKEN", "AGENTS_AUTH_TOKEN"),
 	autoBootstrapProjectFromCwd: booleanWithLegacy(
-		"AGENTZ_AUTO_BOOTSTRAP_PROJECT_FROM_CWD",
-		"T3CODE_AUTO_BOOTSTRAP_PROJECT_FROM_CWD",
+		"AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD",
+		"AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD",
 	),
 	logWebSocketEvents: booleanWithLegacy(
-		"AGENTZ_LOG_WS_EVENTS",
-		"T3CODE_LOG_WS_EVENTS",
+		"AGENTS_LOG_WS_EVENTS",
+		"AGENTS_LOG_WS_EVENTS",
 	),
 });
 
@@ -309,7 +309,7 @@ const makeServerProgram = (input: CliInput) =>
 				? `http://${formatHostForUrl(config.host)}:${config.port}`
 				: localUrl;
 		const { authToken, devUrl, ...safeConfig } = config;
-		yield* Effect.logInfo("Agentz running", {
+		yield* Effect.logInfo("Agents running", {
 			...safeConfig,
 			devUrl: devUrl?.toString(),
 			authEnabled: Boolean(authToken),
@@ -354,7 +354,7 @@ const hostFlag = Flag.string("host").pipe(
 );
 const stateDirFlag = Flag.string("state-dir").pipe(
 	Flag.withDescription(
-		"State directory path (equivalent to AGENTZ_STATE_DIR).",
+		"State directory path (equivalent to AGENTS_STATE_DIR).",
 	),
 	Flag.optional,
 );
@@ -384,13 +384,13 @@ const autoBootstrapProjectFromCwdFlag = Flag.boolean(
 );
 const logWebSocketEventsFlag = Flag.boolean("log-websocket-events").pipe(
 	Flag.withDescription(
-		"Emit server-side logs for outbound WebSocket push traffic (equivalent to AGENTZ_LOG_WS_EVENTS).",
+		"Emit server-side logs for outbound WebSocket push traffic (equivalent to AGENTS_LOG_WS_EVENTS).",
 	),
 	Flag.withAlias("log-ws-events"),
 	Flag.optional,
 );
 
-export const agentzCli = Command.make("agentz", {
+export const agentsCli = Command.make("agents", {
 	mode: modeFlag,
 	port: portFlag,
 	host: hostFlag,
@@ -401,6 +401,6 @@ export const agentzCli = Command.make("agentz", {
 	autoBootstrapProjectFromCwd: autoBootstrapProjectFromCwdFlag,
 	logWebSocketEvents: logWebSocketEventsFlag,
 }).pipe(
-	Command.withDescription("Run the Agentz server."),
+	Command.withDescription("Run the Agents server."),
 	Command.withHandler((input) => Effect.scoped(makeServerProgram(input))),
 );

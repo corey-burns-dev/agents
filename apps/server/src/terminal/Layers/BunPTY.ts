@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 import { Effect, Layer } from "effect";
 import {
 	PtyAdapter,
@@ -14,7 +15,7 @@ class BunPtyProcess implements PtyProcess {
 
 	constructor(private readonly process: Bun.Subprocess) {
 		void this.process.exited
-			.then((exitCode) => {
+			.then((exitCode: any) => {
 				this.emitExit({
 					exitCode: Number.isInteger(exitCode) ? exitCode : 0,
 					signal:
@@ -113,7 +114,7 @@ export const BunPtyAdapterLive = Layer.effect(
 						terminal: {
 							cols: input.cols,
 							rows: input.rows,
-							data: (_terminal, data) => {
+							data: (_terminal: any, data: any) => {
 								processHandle?.emitData(data);
 							},
 						},

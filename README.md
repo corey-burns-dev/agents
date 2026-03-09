@@ -1,44 +1,57 @@
-# Agentz
+# Agents
 
-Agentz is a minimal web GUI for coding agents. Currently Codex-first, with Claude Code support coming soon.
+Agents is a minimal web GUI and desktop application for coding agents.
+
+**This project is a fork of the agents app (agents.chat).**
+
+## Key Additions & Differences
+
+- **Gemini Support**: Gemini use is enabled and fully supported.
+- **Tauri Builds**: The desktop application is built entirely using [Tauri](https://v2.tauri.app/), providing a fast, native, and lightweight experience.
+- **No Electron**: We have completely removed Electron from the stack in favor of Tauri.
 
 ## How to use
 
 > [!WARNING]
-> You need to have [Codex CLI](https://github.com/openai/codex) installed and authorized for Agentz to work.
+> You may need to have [Codex CLI](https://github.com/openai/codex) installed and authorized for Agents to work depending on your chosen provider.
 
-```bash
-npx agentz
-```
+### Running the Desktop App (Tauri) from source
 
-You can also just install the desktop app. It's cooler.
+**Prerequisites:**
+- [Bun](https://bun.sh/)
+- [Rust](https://rustup.rs/)
+- [Tauri's system dependencies](https://v2.tauri.app/start/prerequisites/) for your specific OS.
 
-Install the [desktop app from the Releases page](https://github.com/pingdotgg/agentz/releases)
+From the repository root, you can use the following commands:
 
-### Running the desktop app (Tauri) from source
-
-Prerequisites: [Rust](https://rustup.rs/) and [Tauri’s system dependencies](https://v2.tauri.app/start/prerequisites/) for your OS.
-
-From the repo root:
-
-- **Development** (web dev server + Tauri window with hot reload):
-
+- **Development** (Web dev server + Tauri window with hot reload):
   ```bash
   bun run dev:desktop
   ```
 
-- **Production** (build then run):
-
+- **Production** (Build all assets and start the desktop app):
   ```bash
   bun run start:desktop
   ```
 
-To only build the desktop app: `bun run --cwd apps/desktop build`. Outputs are under `apps/desktop/src-tauri/target/release/` (or `target/debug/` for dev builds).
+- **Build Only** (Build the web, server, and desktop app):
+  ```bash
+  bun run build:desktop
+  ```
+  *Outputs will be located under `apps/desktop/src-tauri/target/release/` (or `target/debug/` for dev builds).*
 
-## Some notes
+### Running via CLI / Web
 
-We are very very early in this project. Expect bugs.
+You can still use Agents as a web application running in your browser:
 
-We are not accepting contributions yet.
+```bash
+# Start the web and server dev runner
+bun run dev
 
-Need support? Join the [Discord](https://discord.gg/jn4EGJjrvv).
+# Or via npx
+npx agents
+```
+
+## Notes
+
+We are very early in this project. Expect bugs. 

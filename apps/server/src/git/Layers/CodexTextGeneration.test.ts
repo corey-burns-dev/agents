@@ -42,32 +42,32 @@ function makeFakeCodexBinary(dir: string) {
 				"  shift",
 				"done",
 				'stdin_content="$(cat)"',
-				'if [ "$AGENTZ_FAKE_CODEX_REQUIRE_IMAGE" = "1" ] && [ "$seen_image" != "1" ]; then',
+				'if [ "$AGENTS_FAKE_CODEX_REQUIRE_IMAGE" = "1" ] && [ "$seen_image" != "1" ]; then',
 				'  printf "%s\\n" "missing --image input" >&2',
 				"  exit 2",
 				"fi",
-				'if [ -n "$AGENTZ_FAKE_CODEX_STDIN_MUST_CONTAIN" ]; then',
-				'  printf "%s" "$stdin_content" | grep -F -- "$AGENTZ_FAKE_CODEX_STDIN_MUST_CONTAIN" >/dev/null || {',
+				'if [ -n "$AGENTS_FAKE_CODEX_STDIN_MUST_CONTAIN" ]; then',
+				'  printf "%s" "$stdin_content" | grep -F -- "$AGENTS_FAKE_CODEX_STDIN_MUST_CONTAIN" >/dev/null || {',
 				'    printf "%s\\n" "stdin missing expected content" >&2',
 				"    exit 3",
 				"  }",
 				"fi",
-				'if [ -n "$AGENTZ_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN" ]; then',
-				'  if printf "%s" "$stdin_content" | grep -F -- "$AGENTZ_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN" >/dev/null; then',
+				'if [ -n "$AGENTS_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN" ]; then',
+				'  if printf "%s" "$stdin_content" | grep -F -- "$AGENTS_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN" >/dev/null; then',
 				'    printf "%s\\n" "stdin contained forbidden content" >&2',
 				"    exit 4",
 				"  fi",
 				"fi",
-				'if [ -n "$AGENTZ_FAKE_CODEX_STDERR" ]; then',
-				'  printf "%s\\n" "$AGENTZ_FAKE_CODEX_STDERR" >&2',
+				'if [ -n "$AGENTS_FAKE_CODEX_STDERR" ]; then',
+				'  printf "%s\\n" "$AGENTS_FAKE_CODEX_STDERR" >&2',
 				"fi",
 				'if [ -n "$output_path" ]; then',
 				// Shell variable substitution, not a template literal
 				// biome-ignore lint/suspicious/noTemplateCurlyInString: shell script
-				'  node -e \'const fs=require("node:fs"); const value=process.argv[2] ?? ""; fs.writeFileSync(process.argv[1], Buffer.from(value, "base64"));\' "$output_path" "${AGENTZ_FAKE_CODEX_OUTPUT_B64:-e30=}"',
+				'  node -e \'const fs=require("node:fs"); const value=process.argv[2] ?? ""; fs.writeFileSync(process.argv[1], Buffer.from(value, "base64"));\' "$output_path" "${AGENTS_FAKE_CODEX_OUTPUT_B64:-e30=}"',
 				"fi",
 				// biome-ignore lint/suspicious/noTemplateCurlyInString: shell script
-				'exit "${AGENTZ_FAKE_CODEX_EXIT_CODE:-0}"',
+				'exit "${AGENTS_FAKE_CODEX_EXIT_CODE:-0}"',
 				"",
 			].join("\n"),
 		);
@@ -91,56 +91,56 @@ function withFakeCodexEnv<A, E, R>(
 		Effect.gen(function* () {
 			const fs = yield* FileSystem.FileSystem;
 			const tempDir = yield* fs.makeTempDirectoryScoped({
-				prefix: "agentz-codex-text-",
+				prefix: "agents-codex-text-",
 			});
 			const binDir = yield* makeFakeCodexBinary(tempDir);
 			const previousPath = process.env.PATH;
-			const previousOutput = process.env.AGENTZ_FAKE_CODEX_OUTPUT_B64;
-			const previousExitCode = process.env.AGENTZ_FAKE_CODEX_EXIT_CODE;
-			const previousStderr = process.env.AGENTZ_FAKE_CODEX_STDERR;
-			const previousRequireImage = process.env.AGENTZ_FAKE_CODEX_REQUIRE_IMAGE;
+			const previousOutput = process.env.AGENTS_FAKE_CODEX_OUTPUT_B64;
+			const previousExitCode = process.env.AGENTS_FAKE_CODEX_EXIT_CODE;
+			const previousStderr = process.env.AGENTS_FAKE_CODEX_STDERR;
+			const previousRequireImage = process.env.AGENTS_FAKE_CODEX_REQUIRE_IMAGE;
 			const previousStdinMustContain =
-				process.env.AGENTZ_FAKE_CODEX_STDIN_MUST_CONTAIN;
+				process.env.AGENTS_FAKE_CODEX_STDIN_MUST_CONTAIN;
 			const previousStdinMustNotContain =
-				process.env.AGENTZ_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN;
+				process.env.AGENTS_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN;
 
 			yield* Effect.sync(() => {
 				process.env.PATH = `${binDir}:${previousPath ?? ""}`;
-				process.env.AGENTZ_FAKE_CODEX_OUTPUT_B64 = Buffer.from(
+				process.env.AGENTS_FAKE_CODEX_OUTPUT_B64 = Buffer.from(
 					input.output,
 					"utf8",
 				).toString("base64");
 
 				if (input.exitCode !== undefined) {
-					process.env.AGENTZ_FAKE_CODEX_EXIT_CODE = String(input.exitCode);
+					process.env.AGENTS_FAKE_CODEX_EXIT_CODE = String(input.exitCode);
 				} else {
-					delete process.env.AGENTZ_FAKE_CODEX_EXIT_CODE;
+					delete process.env.AGENTS_FAKE_CODEX_EXIT_CODE;
 				}
 
 				if (input.stderr !== undefined) {
-					process.env.AGENTZ_FAKE_CODEX_STDERR = input.stderr;
+					process.env.AGENTS_FAKE_CODEX_STDERR = input.stderr;
 				} else {
-					delete process.env.AGENTZ_FAKE_CODEX_STDERR;
+					delete process.env.AGENTS_FAKE_CODEX_STDERR;
 				}
 
 				if (input.requireImage) {
-					process.env.AGENTZ_FAKE_CODEX_REQUIRE_IMAGE = "1";
+					process.env.AGENTS_FAKE_CODEX_REQUIRE_IMAGE = "1";
 				} else {
-					delete process.env.AGENTZ_FAKE_CODEX_REQUIRE_IMAGE;
+					delete process.env.AGENTS_FAKE_CODEX_REQUIRE_IMAGE;
 				}
 
 				if (input.stdinMustContain !== undefined) {
-					process.env.AGENTZ_FAKE_CODEX_STDIN_MUST_CONTAIN =
+					process.env.AGENTS_FAKE_CODEX_STDIN_MUST_CONTAIN =
 						input.stdinMustContain;
 				} else {
-					delete process.env.AGENTZ_FAKE_CODEX_STDIN_MUST_CONTAIN;
+					delete process.env.AGENTS_FAKE_CODEX_STDIN_MUST_CONTAIN;
 				}
 
 				if (input.stdinMustNotContain !== undefined) {
-					process.env.AGENTZ_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN =
+					process.env.AGENTS_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN =
 						input.stdinMustNotContain;
 				} else {
-					delete process.env.AGENTZ_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN;
+					delete process.env.AGENTS_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN;
 				}
 			});
 
@@ -160,41 +160,41 @@ function withFakeCodexEnv<A, E, R>(
 				process.env.PATH = previous.previousPath;
 
 				if (previous.previousOutput === undefined) {
-					delete process.env.AGENTZ_FAKE_CODEX_OUTPUT_B64;
+					delete process.env.AGENTS_FAKE_CODEX_OUTPUT_B64;
 				} else {
-					process.env.AGENTZ_FAKE_CODEX_OUTPUT_B64 = previous.previousOutput;
+					process.env.AGENTS_FAKE_CODEX_OUTPUT_B64 = previous.previousOutput;
 				}
 
 				if (previous.previousExitCode === undefined) {
-					delete process.env.AGENTZ_FAKE_CODEX_EXIT_CODE;
+					delete process.env.AGENTS_FAKE_CODEX_EXIT_CODE;
 				} else {
-					process.env.AGENTZ_FAKE_CODEX_EXIT_CODE = previous.previousExitCode;
+					process.env.AGENTS_FAKE_CODEX_EXIT_CODE = previous.previousExitCode;
 				}
 
 				if (previous.previousStderr === undefined) {
-					delete process.env.AGENTZ_FAKE_CODEX_STDERR;
+					delete process.env.AGENTS_FAKE_CODEX_STDERR;
 				} else {
-					process.env.AGENTZ_FAKE_CODEX_STDERR = previous.previousStderr;
+					process.env.AGENTS_FAKE_CODEX_STDERR = previous.previousStderr;
 				}
 
 				if (previous.previousRequireImage === undefined) {
-					delete process.env.AGENTZ_FAKE_CODEX_REQUIRE_IMAGE;
+					delete process.env.AGENTS_FAKE_CODEX_REQUIRE_IMAGE;
 				} else {
-					process.env.AGENTZ_FAKE_CODEX_REQUIRE_IMAGE =
+					process.env.AGENTS_FAKE_CODEX_REQUIRE_IMAGE =
 						previous.previousRequireImage;
 				}
 
 				if (previous.previousStdinMustContain === undefined) {
-					delete process.env.AGENTZ_FAKE_CODEX_STDIN_MUST_CONTAIN;
+					delete process.env.AGENTS_FAKE_CODEX_STDIN_MUST_CONTAIN;
 				} else {
-					process.env.AGENTZ_FAKE_CODEX_STDIN_MUST_CONTAIN =
+					process.env.AGENTS_FAKE_CODEX_STDIN_MUST_CONTAIN =
 						previous.previousStdinMustContain;
 				}
 
 				if (previous.previousStdinMustNotContain === undefined) {
-					delete process.env.AGENTZ_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN;
+					delete process.env.AGENTS_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN;
 				} else {
-					process.env.AGENTZ_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN =
+					process.env.AGENTS_FAKE_CODEX_STDIN_MUST_NOT_CONTAIN =
 						previous.previousStdinMustNotContain;
 				}
 			}),

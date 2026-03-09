@@ -1,4 +1,4 @@
-import { MessageId } from "@agentz/contracts";
+import { MessageId } from "@agents/contracts";
 import { describe, expect, it } from "vitest";
 
 import { buildBootstrapInput } from "./historyBootstrap";

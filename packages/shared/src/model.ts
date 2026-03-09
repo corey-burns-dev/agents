@@ -6,7 +6,7 @@ import {
 	MODEL_SLUG_ALIASES_BY_PROVIDER,
 	type ModelSlug,
 	type ProviderKind,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 
 type CatalogProvider = keyof typeof MODEL_OPTIONS_BY_PROVIDER;
 

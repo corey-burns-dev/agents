@@ -1,7 +1,7 @@
 import type {
 	DesktopUpdateActionResult,
 	DesktopUpdateState,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { describe, expect, it } from "vitest";
 
 import {

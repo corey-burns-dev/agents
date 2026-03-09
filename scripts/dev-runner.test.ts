@@ -13,7 +13,7 @@ import {
 
 it.layer(NodeServices.layer)("dev-runner", (it) => {
 	describe("resolveOffset", () => {
-		it.effect("uses explicit AGENTZ_PORT_OFFSET when provided", () =>
+		it.effect("uses explicit AGENTS_PORT_OFFSET when provided", () =>
 			Effect.sync(() => {
 				const result = resolveOffset({
 					portOffset: 12,
@@ -21,7 +21,7 @@ it.layer(NodeServices.layer)("dev-runner", (it) => {
 				});
 				assert.deepStrictEqual(result, {
 					offset: 12,
-					source: "AGENTZ_PORT_OFFSET=12",
+					source: "AGENTS_PORT_OFFSET=12",
 				});
 			}),
 		);
@@ -47,13 +47,13 @@ it.layer(NodeServices.layer)("dev-runner", (it) => {
 					}),
 				);
 
-				assert.ok(error.includes("Invalid AGENTZ_PORT_OFFSET"));
+				assert.ok(error.includes("Invalid AGENTS_PORT_OFFSET"));
 			}),
 		);
 	});
 
 	describe("createDevRunnerEnv", () => {
-		it.effect("defaults state dir to ~/.agentz/dev when not provided", () =>
+		it.effect("defaults state dir to ~/.agents/dev when not provided", () =>
 			Effect.gen(function* () {
 				const [env, defaultStateDir] = yield* Effect.all([
 					createDevRunnerEnv({
@@ -73,8 +73,8 @@ it.layer(NodeServices.layer)("dev-runner", (it) => {
 					DEFAULT_DEV_STATE_DIR,
 				]);
 
-				assert.equal(env.AGENTZ_STATE_DIR, defaultStateDir);
-				assert.equal(env.T3CODE_STATE_DIR, defaultStateDir);
+				assert.equal(env.AGENTS_STATE_DIR, defaultStateDir);
+				assert.equal(env.AGENTS_STATE_DIR, defaultStateDir);
 			}),
 		);
 
@@ -95,13 +95,13 @@ it.layer(NodeServices.layer)("dev-runner", (it) => {
 					devUrl: new URL("http://localhost:7331"),
 				});
 
-				assert.equal(env.AGENTZ_STATE_DIR, resolve("/tmp/override-state"));
-				assert.equal(env.AGENTZ_PORT, "4222");
+				assert.equal(env.AGENTS_STATE_DIR, resolve("/tmp/override-state"));
+				assert.equal(env.AGENTS_PORT, "4222");
 				assert.equal(env.VITE_WS_URL, "ws://localhost:4222");
-				assert.equal(env.AGENTZ_NO_BROWSER, "1");
-				assert.equal(env.AGENTZ_AUTO_BOOTSTRAP_PROJECT_FROM_CWD, "0");
-				assert.equal(env.AGENTZ_LOG_WS_EVENTS, "1");
-				assert.equal(env.AGENTZ_HOST, "0.0.0.0");
+				assert.equal(env.AGENTS_NO_BROWSER, "1");
+				assert.equal(env.AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD, "0");
+				assert.equal(env.AGENTS_LOG_WS_EVENTS, "1");
+				assert.equal(env.AGENTS_HOST, "0.0.0.0");
 				assert.equal(env.VITE_DEV_SERVER_URL, "http://localhost:7331/");
 			}),
 		);
@@ -113,7 +113,7 @@ it.layer(NodeServices.layer)("dev-runner", (it) => {
 					const env = yield* createDevRunnerEnv({
 						mode: "dev",
 						baseEnv: {
-							T3CODE_LOG_WS_EVENTS: "keep-me-out",
+							AGENTS_LOG_WS_EVENTS: "keep-me-out",
 						},
 						serverOffset: 0,
 						webOffset: 0,
@@ -127,8 +127,8 @@ it.layer(NodeServices.layer)("dev-runner", (it) => {
 						devUrl: undefined,
 					});
 
-					assert.equal(env.AGENTZ_MODE, "web");
-					assert.equal(env.AGENTZ_LOG_WS_EVENTS, undefined);
+					assert.equal(env.AGENTS_MODE, "web");
+					assert.equal(env.AGENTS_LOG_WS_EVENTS, undefined);
 				}),
 		);
 
@@ -151,7 +151,7 @@ it.layer(NodeServices.layer)("dev-runner", (it) => {
 						devUrl: undefined,
 					});
 
-					assert.equal(env.AGENTZ_LOG_WS_EVENTS, "0");
+					assert.equal(env.AGENTS_LOG_WS_EVENTS, "0");
 				}),
 		);
 	});

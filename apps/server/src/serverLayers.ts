@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 import path from "node:path";
 
 import * as NodeServices from "@effect/platform-node/NodeServices";

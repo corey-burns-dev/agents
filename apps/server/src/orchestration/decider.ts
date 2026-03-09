@@ -2,7 +2,7 @@ import type {
 	OrchestrationCommand,
 	OrchestrationEvent,
 	OrchestrationReadModel,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Effect } from "effect";
 import {
 	requireProject,

@@ -108,7 +108,7 @@ it.effect(
 			assert.strictEqual(status.authStatus, "unknown");
 			assert.strictEqual(
 				status.message,
-				"Codex CLI v0.36.0 is too old for Agentz. Upgrade to v0.37.0 or newer and restart Agentz.",
+				"Codex CLI v0.36.0 is too old for Agents. Upgrade to v0.37.0 or newer and restart Agents.",
 			);
 		}).pipe(
 			Effect.provide(

@@ -1,4 +1,4 @@
-import { type WebSocketRequest, WS_METHODS } from "@agentz/contracts";
+import { type WebSocketRequest, WS_METHODS } from "@agents/contracts";
 import { Effect } from "effect";
 
 import type { TerminalManagerShape } from "./terminal/Services/Manager.ts";

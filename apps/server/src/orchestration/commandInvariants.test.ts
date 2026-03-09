@@ -6,7 +6,7 @@ import {
 	type OrchestrationReadModel,
 	ProjectId,
 	ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 

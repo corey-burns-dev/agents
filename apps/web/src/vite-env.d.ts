@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { NativeApi, DesktopBridge } from "@agentz/contracts";
+import type { NativeApi, DesktopBridge } from "@agents/contracts";
 
 declare global {
 	interface Window {

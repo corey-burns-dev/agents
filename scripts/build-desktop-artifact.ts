@@ -125,43 +125,43 @@ const optionWithLegacy = <A>(
 
 const BuildEnvConfig = Config.all({
 	platform: optionWithLegacy(
-		"AGENTZ_DESKTOP_PLATFORM",
-		"T3CODE_DESKTOP_PLATFORM",
+		"AGENTS_DESKTOP_PLATFORM",
+		"AGENTS_DESKTOP_PLATFORM",
 		(k) => Config.schema(BuildPlatform, k),
 	),
 	target: optionWithLegacy(
-		"AGENTZ_DESKTOP_TARGET",
-		"T3CODE_DESKTOP_TARGET",
+		"AGENTS_DESKTOP_TARGET",
+		"AGENTS_DESKTOP_TARGET",
 		(k) => Config.string(k),
 	),
-	arch: optionWithLegacy("AGENTZ_DESKTOP_ARCH", "T3CODE_DESKTOP_ARCH", (k) =>
+	arch: optionWithLegacy("AGENTS_DESKTOP_ARCH", "AGENTS_DESKTOP_ARCH", (k) =>
 		Config.schema(BuildArch, k),
 	),
 	version: optionWithLegacy(
-		"AGENTZ_DESKTOP_VERSION",
-		"T3CODE_DESKTOP_VERSION",
+		"AGENTS_DESKTOP_VERSION",
+		"AGENTS_DESKTOP_VERSION",
 		(k) => Config.string(k),
 	),
 	outputDir: optionWithLegacy(
-		"AGENTZ_DESKTOP_OUTPUT_DIR",
-		"T3CODE_DESKTOP_OUTPUT_DIR",
+		"AGENTS_DESKTOP_OUTPUT_DIR",
+		"AGENTS_DESKTOP_OUTPUT_DIR",
 		(k) => Config.string(k),
 	),
 	skipBuild: Config.all({
-		a: Config.boolean("AGENTZ_DESKTOP_SKIP_BUILD").pipe(Config.option),
-		b: Config.boolean("T3CODE_DESKTOP_SKIP_BUILD").pipe(Config.option),
+		a: Config.boolean("AGENTS_DESKTOP_SKIP_BUILD").pipe(Config.option),
+		b: Config.boolean("AGENTS_DESKTOP_SKIP_BUILD").pipe(Config.option),
 	}).pipe(Config.map(({ a, b }) => a ?? b ?? false)),
 	keepStage: Config.all({
-		a: Config.boolean("AGENTZ_DESKTOP_KEEP_STAGE").pipe(Config.option),
-		b: Config.boolean("T3CODE_DESKTOP_KEEP_STAGE").pipe(Config.option),
+		a: Config.boolean("AGENTS_DESKTOP_KEEP_STAGE").pipe(Config.option),
+		b: Config.boolean("AGENTS_DESKTOP_KEEP_STAGE").pipe(Config.option),
 	}).pipe(Config.map(({ a, b }) => a ?? b ?? false)),
 	signed: Config.all({
-		a: Config.boolean("AGENTZ_DESKTOP_SIGNED").pipe(Config.option),
-		b: Config.boolean("T3CODE_DESKTOP_SIGNED").pipe(Config.option),
+		a: Config.boolean("AGENTS_DESKTOP_SIGNED").pipe(Config.option),
+		b: Config.boolean("AGENTS_DESKTOP_SIGNED").pipe(Config.option),
 	}).pipe(Config.map(({ a, b }) => a ?? b ?? false)),
 	verbose: Config.all({
-		a: Config.boolean("AGENTZ_DESKTOP_VERBOSE").pipe(Config.option),
-		b: Config.boolean("T3CODE_DESKTOP_VERBOSE").pipe(Config.option),
+		a: Config.boolean("AGENTS_DESKTOP_VERBOSE").pipe(Config.option),
+		b: Config.boolean("AGENTS_DESKTOP_VERBOSE").pipe(Config.option),
 	}).pipe(Config.map(({ a, b }) => a ?? b ?? false)),
 });
 
@@ -303,7 +303,7 @@ function stageMacIcons(stageResourcesDir: string, verbose: boolean) {
 		}
 
 		const tmpRoot = yield* fs.makeTempDirectoryScoped({
-			prefix: "agentz-icon-build-",
+			prefix: "agents-icon-build-",
 		});
 
 		const iconPngPath = path.join(stageResourcesDir, "icon.png");
@@ -526,59 +526,59 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
 
 const buildDesktopArtifactCli = Command.make("build-desktop-artifact", {
 	platform: Flag.choice("platform", BuildPlatform.literals).pipe(
-		Flag.withDescription("Build platform (env: AGENTZ_DESKTOP_PLATFORM)."),
+		Flag.withDescription("Build platform (env: AGENTS_DESKTOP_PLATFORM)."),
 		Flag.optional,
 	),
 	target: Flag.string("target").pipe(
 		Flag.withDescription(
-			"Artifact target, for example dmg/AppImage/nsis (env: AGENTZ_DESKTOP_TARGET).",
+			"Artifact target, for example dmg/AppImage/nsis (env: AGENTS_DESKTOP_TARGET).",
 		),
 		Flag.optional,
 	),
 	arch: Flag.choice("arch", BuildArch.literals).pipe(
 		Flag.withDescription(
-			"Build arch, for example arm64/x64/universal (env: AGENTZ_DESKTOP_ARCH).",
+			"Build arch, for example arm64/x64/universal (env: AGENTS_DESKTOP_ARCH).",
 		),
 		Flag.optional,
 	),
 	buildVersion: Flag.string("build-version").pipe(
 		Flag.withDescription(
-			"Artifact version metadata (env: AGENTZ_DESKTOP_VERSION).",
+			"Artifact version metadata (env: AGENTS_DESKTOP_VERSION).",
 		),
 		Flag.optional,
 	),
 	outputDir: Flag.string("output-dir").pipe(
 		Flag.withDescription(
-			"Output directory for artifacts (env: AGENTZ_DESKTOP_OUTPUT_DIR).",
+			"Output directory for artifacts (env: AGENTS_DESKTOP_OUTPUT_DIR).",
 		),
 		Flag.optional,
 	),
 	skipBuild: Flag.boolean("skip-build").pipe(
 		Flag.withDescription(
-			"Skip `bun run build:desktop` and use existing dist artifacts (env: AGENTZ_DESKTOP_SKIP_BUILD).",
+			"Skip `bun run build:desktop` and use existing dist artifacts (env: AGENTS_DESKTOP_SKIP_BUILD).",
 		),
 		Flag.optional,
 	),
 	keepStage: Flag.boolean("keep-stage").pipe(
 		Flag.withDescription(
-			"Keep temporary staging files (env: AGENTZ_DESKTOP_KEEP_STAGE).",
+			"Keep temporary staging files (env: AGENTS_DESKTOP_KEEP_STAGE).",
 		),
 		Flag.optional,
 	),
 	signed: Flag.boolean("signed").pipe(
 		Flag.withDescription(
-			"Enable signing/notarization discovery; Windows uses Azure Trusted Signing (env: AGENTZ_DESKTOP_SIGNED).",
+			"Enable signing/notarization discovery; Windows uses Azure Trusted Signing (env: AGENTS_DESKTOP_SIGNED).",
 		),
 		Flag.optional,
 	),
 	verbose: Flag.boolean("verbose").pipe(
 		Flag.withDescription(
-			"Stream subprocess stdout (env: AGENTZ_DESKTOP_VERBOSE).",
+			"Stream subprocess stdout (env: AGENTS_DESKTOP_VERBOSE).",
 		),
 		Flag.optional,
 	),
 }).pipe(
-	Command.withDescription("Build a desktop artifact for Agentz."),
+	Command.withDescription("Build a desktop artifact for Agents."),
 	Command.withHandler((input) =>
 		Effect.flatMap(resolveBuildOptions(input), buildDesktopArtifact),
 	),

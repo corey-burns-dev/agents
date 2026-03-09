@@ -2,7 +2,7 @@ import type {
 	ProjectScript,
 	ProjectScriptIcon,
 	ResolvedKeybindingsConfig,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	BugIcon,
 	ChevronDownIcon,

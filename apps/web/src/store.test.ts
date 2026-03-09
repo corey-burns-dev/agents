@@ -4,7 +4,7 @@ import {
 	ProjectId,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { describe, expect, it } from "vitest";
 
 import { type AppState, markThreadUnread, syncServerReadModel } from "./store";

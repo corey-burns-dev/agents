@@ -3,7 +3,7 @@ import type {
 	ProviderSessionRuntimeStatus,
 	RuntimeMode,
 	ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect } from "effect";
 import { type Option, ServiceMap } from "effect";
 
@@ -58,4 +58,4 @@ export interface ProviderSessionDirectoryShape {
 export class ProviderSessionDirectory extends ServiceMap.Service<
 	ProviderSessionDirectory,
 	ProviderSessionDirectoryShape
->()("agentz/provider/Services/ProviderSessionDirectory") {}
+>()("agents/provider/Services/ProviderSessionDirectory") {}

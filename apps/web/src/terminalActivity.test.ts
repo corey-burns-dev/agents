@@ -1,4 +1,4 @@
-import type { TerminalEvent, TerminalSessionSnapshot } from "@agentz/contracts";
+import type { TerminalEvent, TerminalSessionSnapshot } from "@agents/contracts";
 import { describe, expect, it } from "vitest";
 import { terminalRunningSubprocessFromEvent } from "./terminalActivity";
 

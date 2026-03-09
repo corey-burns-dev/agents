@@ -12,7 +12,7 @@ import {
 	RuntimeMode,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect } from "effect";
 import { type Option, Schema, ServiceMap } from "effect";
 
@@ -79,5 +79,5 @@ export class ProjectionThreadSessionRepository extends ServiceMap.Service<
 	ProjectionThreadSessionRepository,
 	ProjectionThreadSessionRepositoryShape
 >()(
-	"agentz/persistence/Services/ProjectionThreadSessions/ProjectionThreadSessionRepository",
+	"agents/persistence/Services/ProjectionThreadSessions/ProjectionThreadSessionRepository",
 ) {}

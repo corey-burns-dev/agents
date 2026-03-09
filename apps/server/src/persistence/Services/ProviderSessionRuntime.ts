@@ -10,7 +10,7 @@ import {
 	ProviderSessionRuntimeStatus,
 	RuntimeMode,
 	ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect } from "effect";
 import { type Option, Schema, ServiceMap } from "effect";
 
@@ -88,5 +88,5 @@ export class ProviderSessionRuntimeRepository extends ServiceMap.Service<
 	ProviderSessionRuntimeRepository,
 	ProviderSessionRuntimeRepositoryShape
 >()(
-	"agentz/persistence/Services/ProviderSessionRuntime/ProviderSessionRuntimeRepository",
+	"agents/persistence/Services/ProviderSessionRuntime/ProviderSessionRuntimeRepository",
 ) {}

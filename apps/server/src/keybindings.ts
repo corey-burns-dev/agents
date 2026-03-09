@@ -16,7 +16,7 @@ import {
 	ResolvedKeybindingRule,
 	type ResolvedKeybindingsConfig,
 	type ServerConfigIssue,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	Cache,
 	Cause,
@@ -528,7 +528,7 @@ export interface KeybindingsShape {
 export class Keybindings extends ServiceMap.Service<
 	Keybindings,
 	KeybindingsShape
->()("agentz/keybindings") {}
+>()("agents/keybindings") {}
 
 const makeKeybindings = Effect.gen(function* () {
 	const { keybindingsConfigPath } = yield* ServerConfig;

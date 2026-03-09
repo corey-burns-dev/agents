@@ -11,7 +11,7 @@ import {
 	WS_CHANNELS,
 	WS_METHODS,
 	type WsWelcomePayload,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { HttpResponse, http, ws } from "msw";
 import { setupWorker } from "msw/browser";
@@ -134,7 +134,7 @@ function isoAt(offsetSeconds: number): string {
 function createBaseServerConfig(): ServerConfig {
 	return {
 		cwd: "/repo/project",
-		keybindingsConfigPath: "/repo/project/.agentz-keybindings.json",
+		keybindingsConfigPath: "/repo/project/.agents-keybindings.json",
 		keybindings: [],
 		issues: [],
 		providers: [

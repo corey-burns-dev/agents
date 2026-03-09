@@ -1,7 +1,7 @@
 import {
 	DEFAULT_MODEL_BY_PROVIDER,
 	MODEL_OPTIONS_BY_PROVIDER,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { describe, expect, it } from "vitest";
 
 import {

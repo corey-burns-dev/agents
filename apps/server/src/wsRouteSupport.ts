@@ -1,4 +1,4 @@
-import type { WebSocketRequest } from "@agentz/contracts";
+import type { WebSocketRequest } from "@agents/contracts";
 import {
 	Effect,
 	type Effect as EffectType,

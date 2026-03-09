@@ -12,8 +12,8 @@ packages/*/dist
 build/
 .logs/
 release/
-.agentz
-.t3
+.agents
+.agents
 apps/desktop/src-tauri/target
 apps/web/.playwright
 apps/web/playwright-report

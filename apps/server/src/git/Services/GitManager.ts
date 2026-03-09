@@ -11,7 +11,7 @@ import type {
 	GitRunStackedActionResult,
 	GitStatusInput,
 	GitStatusResult,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect } from "effect";
 import { ServiceMap } from "effect";
 import type { GitManagerServiceError } from "../Errors.ts";
@@ -42,4 +42,4 @@ export interface GitManagerShape {
 export class GitManager extends ServiceMap.Service<
 	GitManager,
 	GitManagerShape
->()("agentz/git/Services/GitManager") {}
+>()("agents/git/Services/GitManager") {}

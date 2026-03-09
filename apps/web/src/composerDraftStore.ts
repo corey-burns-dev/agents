@@ -7,8 +7,8 @@ import {
 	REASONING_EFFORT_OPTIONS_BY_PROVIDER,
 	type RuntimeMode,
 	type ThreadId,
-} from "@agentz/contracts";
-import { normalizeModelSlug } from "@agentz/shared/model";
+} from "@agents/contracts";
+import { normalizeModelSlug } from "@agents/shared/model";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import {
@@ -17,7 +17,7 @@ import {
 	DEFAULT_RUNTIME_MODE,
 } from "./types";
 
-export const COMPOSER_DRAFT_STORAGE_KEY = "agentz:composer-drafts:v1";
+export const COMPOSER_DRAFT_STORAGE_KEY = "agents:composer-drafts:v1";
 export type DraftThreadEnvMode = "local" | "worktree";
 
 export interface PersistedComposerImageAttachment {

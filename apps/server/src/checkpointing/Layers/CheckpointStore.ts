@@ -10,7 +10,7 @@
  * @module CheckpointStoreLive
  */
 import { randomUUID } from "node:crypto";
-import type { CheckpointRef } from "@agentz/contracts";
+import type { CheckpointRef } from "@agents/contracts";
 import { Effect, FileSystem, Layer, Path } from "effect";
 import { GitCommandError } from "../../git/Errors.ts";
 import { GitServiceLive } from "../../git/Layers/GitService.ts";
@@ -101,17 +101,17 @@ const makeCheckpointStore = Effect.gen(function* () {
 			const operation = "CheckpointStore.captureCheckpoint";
 
 			yield* Effect.acquireUseRelease(
-				fs.makeTempDirectory({ prefix: "t3-fs-checkpoint-" }),
+				fs.makeTempDirectory({ prefix: "agents-fs-checkpoint-" }),
 				(tempDir) =>
 					Effect.gen(function* () {
 						const tempIndexPath = path.join(tempDir, `index-${randomUUID()}`);
 						const commitEnv: NodeJS.ProcessEnv = {
 							...process.env,
 							GIT_INDEX_FILE: tempIndexPath,
-							GIT_AUTHOR_NAME: "Agentz",
-							GIT_AUTHOR_EMAIL: "agentz@users.noreply.github.com",
-							GIT_COMMITTER_NAME: "Agentz",
-							GIT_COMMITTER_EMAIL: "agentz@users.noreply.github.com",
+							GIT_AUTHOR_NAME: "Agents",
+							GIT_AUTHOR_EMAIL: "agents@users.noreply.github.com",
+							GIT_COMMITTER_NAME: "Agents",
+							GIT_COMMITTER_EMAIL: "agents@users.noreply.github.com",
 						};
 
 						const headExists = yield* hasHeadCommit(input.cwd);
@@ -147,7 +147,7 @@ const makeCheckpointStore = Effect.gen(function* () {
 							});
 						}
 
-						const message = `t3 checkpoint ref=${input.checkpointRef}`;
+						const message = `agents checkpoint ref=${input.checkpointRef}`;
 						const commitTreeResult = yield* git.execute({
 							operation,
 							cwd: input.cwd,

@@ -6,7 +6,7 @@ import {
 	type ProviderRuntimeEvent,
 	type ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Cause, Effect, Layer, Option, Queue, Stream } from "effect";
 
 import { parseTurnDiffFilesFromUnifiedDiff } from "../../checkpointing/Diffs.ts";

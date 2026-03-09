@@ -57,28 +57,28 @@ const booleanWithLegacy = (primary: string, legacy: string, def: boolean) =>
 
 const TelemetryEnvConfig = Config.all({
 	posthogKey: stringWithLegacy(
-		"AGENTZ_POSTHOG_KEY",
-		"T3CODE_POSTHOG_KEY",
+		"AGENTS_POSTHOG_KEY",
+		"AGENTS_POSTHOG_KEY",
 		"phc_XOWci4oZP4VvLiEyrFqkFjP4CZn55mjYYBMREK5Wd6m",
 	),
 	posthogHost: stringWithLegacy(
-		"AGENTZ_POSTHOG_HOST",
-		"T3CODE_POSTHOG_HOST",
+		"AGENTS_POSTHOG_HOST",
+		"AGENTS_POSTHOG_HOST",
 		"https://us.i.posthog.com",
 	),
 	enabled: booleanWithLegacy(
-		"AGENTZ_TELEMETRY_ENABLED",
-		"T3CODE_TELEMETRY_ENABLED",
+		"AGENTS_TELEMETRY_ENABLED",
+		"AGENTS_TELEMETRY_ENABLED",
 		true,
 	),
 	flushBatchSize: numberWithLegacy(
-		"AGENTZ_TELEMETRY_FLUSH_BATCH_SIZE",
-		"T3CODE_TELEMETRY_FLUSH_BATCH_SIZE",
+		"AGENTS_TELEMETRY_FLUSH_BATCH_SIZE",
+		"AGENTS_TELEMETRY_FLUSH_BATCH_SIZE",
 		20,
 	),
 	maxBufferedEvents: numberWithLegacy(
-		"AGENTZ_TELEMETRY_MAX_BUFFERED_EVENTS",
-		"T3CODE_TELEMETRY_MAX_BUFFERED_EVENTS",
+		"AGENTS_TELEMETRY_MAX_BUFFERED_EVENTS",
+		"AGENTS_TELEMETRY_MAX_BUFFERED_EVENTS",
 		1_000,
 	),
 });
@@ -139,7 +139,7 @@ const makeAnalyticsService = Effect.gen(function* () {
 						platform: process.platform,
 						wsl: process.env.WSL_DISTRO_NAME,
 						arch: process.arch,
-						t3CodeVersion: version,
+						agentsVersion: version,
 						clientType,
 					},
 					timestamp: event.capturedAt,

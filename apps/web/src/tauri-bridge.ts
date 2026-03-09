@@ -2,7 +2,7 @@
  * When running inside Tauri, expose window.desktopBridge using the Tauri invoke API.
  * Must run before any code that reads window.desktopBridge (e.g. env.ts).
  */
-import type { DesktopBridge } from "@agentz/contracts";
+import type { DesktopBridge } from "@agents/contracts";
 
 declare global {
 	interface Window {

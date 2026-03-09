@@ -19,7 +19,7 @@ import {
 	RuntimeTaskId,
 	type ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	Effect,
 	FileSystem,

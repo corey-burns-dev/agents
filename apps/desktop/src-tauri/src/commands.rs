@@ -57,7 +57,7 @@ pub async fn confirm(app: AppHandle, message: String) -> Result<bool, String> {
     let result = app
         .dialog()
         .message(msg)
-        .title("Agentz")
+        .title("Agents")
         .kind(MessageDialogKind::Warning)
         .buttons(MessageDialogButtons::YesNo)
         .blocking_show();

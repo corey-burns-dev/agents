@@ -1,4 +1,4 @@
-import { MessageId, ThreadId } from "@agentz/contracts";
+import { MessageId, ThreadId } from "@agents/contracts";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 

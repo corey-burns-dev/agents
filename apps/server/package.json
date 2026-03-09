@@ -1,13 +1,13 @@
 {
-	"name": "agentz",
+	"name": "agents",
 	"version": "0.0.4-alpha.1",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/pingdotgg/agentz",
+		"url": "https://github.com/pingdotgg/agents",
 		"directory": "apps/server"
 	},
 	"bin": {
-		"agentz": "./dist/index.mjs"
+		"agents": "./dist/index.mjs"
 	},
 	"files": [
 		"dist"
@@ -33,9 +33,9 @@
 	"devDependencies": {
 		"@effect/language-service": "catalog:",
 		"@effect/vitest": "catalog:",
-		"@agentz/contracts": "workspace:*",
-		"@agentz/shared": "workspace:*",
-		"@agentz/web": "workspace:*",
+		"@agents/contracts": "workspace:*",
+		"@agents/shared": "workspace:*",
+		"@agents/web": "workspace:*",
 		"@types/bun": "catalog:",
 		"@types/node": "catalog:",
 		"@types/ws": "^8.5.13",

@@ -15,7 +15,7 @@ This document covers how to run desktop releases from one tag, first without sig
   - Versions with a suffix after `X.Y.Z` (for example `1.2.3-alpha.1`) are published as GitHub prereleases.
   - Only plain `X.Y.Z` releases are marked as the repository's latest release.
 - Desktop artifacts are produced by Tauri build (e.g. DMG, AppImage, NSIS); auto-update metadata (Tauri updater manifest) can be added in future.
-- Publishes the CLI package (`apps/server`, npm package `t3`) with OIDC trusted publishing.
+- Publishes the CLI package (`apps/server`, npm package `agents`) with OIDC trusted publishing.
 - Signing is optional and auto-detected per platform from secrets.
 
 ## Desktop auto-update notes
@@ -31,7 +31,7 @@ the package version to the release tag version.
 
 Checklist:
 
-1. Confirm npm org/user owns package `t3` (or rename package first if needed).
+1. Confirm npm org/user owns package `agents` (or rename package first if needed).
 2. In npm package settings, configure Trusted Publisher:
    - Provider: GitHub Actions
    - Repository: this repo

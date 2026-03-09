@@ -13,7 +13,7 @@ import {
 	type ProviderUserInputAnswers,
 	type ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Effect, type ServiceMap } from "effect";
 import {
 	emitErrorEvent as emitCodexErrorEvent,

@@ -135,7 +135,7 @@ function buildLanguageAssociations(manifest, languages) {
 
 async function main() {
 	const tmpDir = await fs.mkdtemp(
-		path.join(os.tmpdir(), "t3-vscode-icons-sync-"),
+		path.join(os.tmpdir(), "agents-vscode-icons-sync-"),
 	);
 	try {
 		const vsixPath = await downloadVsix(tmpDir);

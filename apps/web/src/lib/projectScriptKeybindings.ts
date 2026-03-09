@@ -3,7 +3,7 @@ import {
 	type KeybindingRule,
 	KeybindingRule as KeybindingRuleSchema,
 	type ResolvedKeybindingsConfig,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Schema } from "effect";
 
 export const PROJECT_SCRIPT_KEYBINDING_INVALID_MESSAGE = "Invalid keybinding.";

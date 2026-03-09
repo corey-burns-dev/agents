@@ -4,7 +4,7 @@ import {
 	ThreadId,
 	TrimmedNonEmptyString,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect } from "effect";
 import { Schema, ServiceMap } from "effect";
 
@@ -52,5 +52,5 @@ export class ProjectionThreadProposedPlanRepository extends ServiceMap.Service<
 	ProjectionThreadProposedPlanRepository,
 	ProjectionThreadProposedPlanRepositoryShape
 >()(
-	"agentz/persistence/Services/ProjectionThreadProposedPlans/ProjectionThreadProposedPlanRepository",
+	"agents/persistence/Services/ProjectionThreadProposedPlans/ProjectionThreadProposedPlanRepository",
 ) {}

@@ -11,7 +11,7 @@
  * @module CheckpointStore
  */
 
-import type { CheckpointRef } from "@agentz/contracts";
+import type { CheckpointRef } from "@agents/contracts";
 import type { Effect } from "effect";
 import { ServiceMap } from "effect";
 import type { CheckpointStoreError } from "../Errors.ts";
@@ -100,4 +100,4 @@ export interface CheckpointStoreShape {
 export class CheckpointStore extends ServiceMap.Service<
 	CheckpointStore,
 	CheckpointStoreShape
->()("agentz/checkpointing/Services/CheckpointStore") {}
+>()("agents/checkpointing/Services/CheckpointStore") {}

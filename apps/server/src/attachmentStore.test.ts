@@ -45,7 +45,7 @@ describe("attachmentStore", () => {
 
 	it("resolves attachment path by id using the extension that exists on disk", () => {
 		const stateDir = fs.mkdtempSync(
-			path.join(os.tmpdir(), "agentz-attachment-store-"),
+			path.join(os.tmpdir(), "agents-attachment-store-"),
 		);
 		try {
 			const attachmentId = "thread-1-attachment";
@@ -66,7 +66,7 @@ describe("attachmentStore", () => {
 
 	it("returns null when no attachment file exists for the id", () => {
 		const stateDir = fs.mkdtempSync(
-			path.join(os.tmpdir(), "agentz-attachment-store-"),
+			path.join(os.tmpdir(), "agents-attachment-store-"),
 		);
 		try {
 			const resolved = resolveAttachmentPathById({

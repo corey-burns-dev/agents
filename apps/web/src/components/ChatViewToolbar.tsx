@@ -4,8 +4,8 @@ import type {
 	ResolvedKeybindingsConfig,
 	ServerProviderStatus,
 	ThreadId,
-} from "@agentz/contracts";
-import { EDITORS } from "@agentz/contracts";
+} from "@agents/contracts";
+import { EDITORS } from "@agents/contracts";
 import {
 	ChevronDownIcon,
 	CircleAlertIcon,
@@ -40,7 +40,7 @@ import { SidebarTrigger } from "./ui/sidebar";
 import { Toggle } from "./ui/toggle";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
 
-const LAST_EDITOR_KEY = "agentz:last-editor";
+const LAST_EDITOR_KEY = "agents:last-editor";
 
 interface ChatHeaderProps {
 	activeThreadId: ThreadId;

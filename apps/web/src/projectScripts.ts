@@ -3,7 +3,7 @@ import {
 	MAX_SCRIPT_ID_LENGTH,
 	type ProjectScript,
 	SCRIPT_RUN_COMMAND_PATTERN,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Schema } from "effect";
 
 function normalizeScriptId(value: string): string {
@@ -70,10 +70,10 @@ export function projectScriptRuntimeEnv(
 	input: ProjectScriptRuntimeEnvInput,
 ): Record<string, string> {
 	const env: Record<string, string> = {
-		T3CODE_PROJECT_ROOT: input.project.cwd,
+		AGENTS_PROJECT_ROOT: input.project.cwd,
 	};
 	if (input.worktreePath) {
-		env.T3CODE_WORKTREE_PATH = input.worktreePath;
+		env.AGENTS_WORKTREE_PATH = input.worktreePath;
 	}
 	if (input.extraEnv) {
 		return { ...env, ...input.extraEnv };

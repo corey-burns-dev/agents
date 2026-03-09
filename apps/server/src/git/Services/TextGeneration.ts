@@ -7,7 +7,7 @@
  * @module TextGeneration
  */
 
-import type { ChatAttachment } from "@agentz/contracts";
+import type { ChatAttachment } from "@agents/contracts";
 import type { Effect } from "effect";
 import { ServiceMap } from "effect";
 
@@ -97,4 +97,4 @@ export interface TextGenerationShape {
 export class TextGeneration extends ServiceMap.Service<
 	TextGeneration,
 	TextGenerationShape
->()("agentz/git/Services/TextGeneration") {}
+>()("agents/git/Services/TextGeneration") {}

@@ -16,8 +16,8 @@ import type {
 	ProviderInteractionMode,
 	ProviderUserInputAnswers,
 	RuntimeMode,
-} from "@agentz/contracts";
-import { normalizeModelSlug } from "@agentz/shared/model";
+} from "@agents/contracts";
+import { normalizeModelSlug } from "@agents/shared/model";
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -273,8 +273,8 @@ export function normalizeCodexModelSlug(
 export function buildCodexInitializeParams() {
 	return {
 		clientInfo: {
-			name: "agentz_desktop",
-			title: "Agentz Desktop",
+			name: "agents_desktop",
+			title: "Agents Desktop",
 			version: "0.1.0",
 		},
 		capabilities: { experimentalApi: true },

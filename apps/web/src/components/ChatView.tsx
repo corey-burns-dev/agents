@@ -20,14 +20,14 @@ import {
 	type ServerProviderStatus,
 	type ThreadId,
 	type TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import {
 	getDefaultModel,
 	getDefaultReasoningEffort,
 	getReasoningEffortOptions,
 	normalizeModelSlug,
 	resolveModelSlugForProvider,
-} from "@agentz/shared/model";
+} from "@agents/shared/model";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
@@ -148,7 +148,7 @@ import { SidebarTrigger } from "./ui/sidebar";
 import { toastManager } from "./ui/toast";
 
 const LAST_INVOKED_SCRIPT_BY_PROJECT_KEY =
-	"agentz:last-invoked-script-by-project";
+	"agents:last-invoked-script-by-project";
 const ATTACHMENT_PREVIEW_HANDOFF_TTL_MS = 5000;
 const IMAGE_SIZE_LIMIT_LABEL = `${Math.round(PROVIDER_SEND_TURN_MAX_IMAGE_BYTES / (1024 * 1024))}MB`;
 const IMAGE_ONLY_BOOTSTRAP_PROMPT =
@@ -165,7 +165,7 @@ const EMPTY_PENDING_USER_INPUT_ANSWERS: Record<
 const COMPOSER_PATH_QUERY_DEBOUNCE_MS = 120;
 const SCRIPT_TERMINAL_COLS = 120;
 const SCRIPT_TERMINAL_ROWS = 30;
-const WORKTREE_BRANCH_PREFIX = "agentz";
+const WORKTREE_BRANCH_PREFIX = "agents";
 
 function readLastInvokedScriptByProjectFromStorage(): Record<string, string> {
 	const stored = localStorage.getItem(LAST_INVOKED_SCRIPT_BY_PROJECT_KEY);

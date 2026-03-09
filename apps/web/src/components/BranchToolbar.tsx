@@ -1,4 +1,4 @@
-import type { ThreadId } from "@agentz/contracts";
+import type { ThreadId } from "@agents/contracts";
 import { useCallback } from "react";
 import { useComposerDraftStore } from "../composerDraftStore";
 import { newCommandId } from "../lib/utils";

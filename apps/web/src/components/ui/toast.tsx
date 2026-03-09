@@ -1,6 +1,6 @@
 "use client";
 
-import { ThreadId } from "@agentz/contracts";
+import { ThreadId } from "@agents/contracts";
 import { Toast } from "@base-ui/react/toast";
 import { useParams } from "@tanstack/react-router";
 import {

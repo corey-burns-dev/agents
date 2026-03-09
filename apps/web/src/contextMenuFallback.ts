@@ -1,4 +1,4 @@
-import type { ContextMenuItem } from "@agentz/contracts";
+import type { ContextMenuItem } from "@agents/contracts";
 
 /**
  * Imperative DOM-based context menu for non-Electron environments.

@@ -1,4 +1,4 @@
-import { ThreadId } from "@agentz/contracts";
+import { ThreadId } from "@agents/contracts";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {

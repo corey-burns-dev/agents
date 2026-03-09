@@ -11,7 +11,7 @@ import type {
 	OrchestrationGetFullThreadDiffResult,
 	OrchestrationGetTurnDiffInput,
 	OrchestrationGetTurnDiffResult,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect } from "effect";
 import { ServiceMap } from "effect";
 
@@ -49,4 +49,4 @@ export interface CheckpointDiffQueryShape {
 export class CheckpointDiffQuery extends ServiceMap.Service<
 	CheckpointDiffQuery,
 	CheckpointDiffQueryShape
->()("agentz/checkpointing/Services/CheckpointDiffQuery") {}
+>()("agents/checkpointing/Services/CheckpointDiffQuery") {}

@@ -1,4 +1,4 @@
-import type { GitBranch } from "@agentz/contracts";
+import type { GitBranch } from "@agents/contracts";
 
 export type EnvMode = "local" | "worktree";
 

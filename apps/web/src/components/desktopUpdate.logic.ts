@@ -1,7 +1,7 @@
 import type {
 	DesktopUpdateActionResult,
 	DesktopUpdateState,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 
 export type DesktopUpdateButtonAction = "download" | "install" | "none";
 

@@ -2,7 +2,7 @@ import type {
 	GitRunStackedActionResult,
 	GitStackedAction,
 	GitStatusResult,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 
 export type GitActionIconName = "commit" | "push" | "pr";
 
@@ -356,4 +356,4 @@ export function resolveDefaultBranchActionDialogCopy(input: {
 }
 
 // Re-export from shared for backwards compatibility in this module's exports
-export { resolveAutoFeatureBranchName } from "@agentz/shared/git";
+export { resolveAutoFeatureBranchName } from "@agents/shared/git";

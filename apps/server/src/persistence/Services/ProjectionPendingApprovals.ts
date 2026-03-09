@@ -13,7 +13,7 @@ import {
 	ProjectionPendingApprovalStatus,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect } from "effect";
 import { type Option, Schema, ServiceMap } from "effect";
 
@@ -98,5 +98,5 @@ export class ProjectionPendingApprovalRepository extends ServiceMap.Service<
 	ProjectionPendingApprovalRepository,
 	ProjectionPendingApprovalRepositoryShape
 >()(
-	"agentz/persistence/Services/ProjectionPendingApprovals/ProjectionPendingApprovalRepository",
+	"agents/persistence/Services/ProjectionPendingApprovals/ProjectionPendingApprovalRepository",
 ) {}

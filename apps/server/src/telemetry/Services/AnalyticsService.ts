@@ -26,7 +26,7 @@ export interface AnalyticsServiceShape {
 export class AnalyticsService extends ServiceMap.Service<
 	AnalyticsService,
 	AnalyticsServiceShape
->()("agentz/telemetry/Services/AnalyticsService") {
+>()("agents/telemetry/Services/AnalyticsService") {
 	static readonly layerTest = Layer.succeed(AnalyticsService, {
 		record: () => Effect.void,
 		flush: Effect.void,

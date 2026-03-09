@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import type { ProviderRuntimeEvent, ProviderSession } from "@agentz/contracts";
+import type { ProviderRuntimeEvent, ProviderSession } from "@agents/contracts";
 import {
 	CommandId,
 	DEFAULT_PROVIDER_INTERACTION_MODE,
@@ -12,7 +12,7 @@ import {
 	ProjectId,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import {
 	Effect,
@@ -188,7 +188,9 @@ function runGit(cwd: string, args: ReadonlyArray<string>) {
 }
 
 function createGitRepository() {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "t3-checkpoint-handler-"));
+	const cwd = fs.mkdtempSync(
+		path.join(os.tmpdir(), "agents-checkpoint-handler-"),
+	);
 	runGit(cwd, ["init", "--initial-branch=main"]);
 	runGit(cwd, ["config", "user.email", "test@example.com"]);
 	runGit(cwd, ["config", "user.name", "Test User"]);
@@ -720,7 +722,7 @@ describe("CheckpointReactor", () => {
 
 	it("continues processing runtime events after a single checkpoint runtime failure", async () => {
 		const nonRepositorySessionCwd = fs.mkdtempSync(
-			path.join(os.tmpdir(), "t3-checkpoint-runtime-non-repo-"),
+			path.join(os.tmpdir(), "agents-checkpoint-runtime-non-repo-"),
 		);
 		tempDirs.push(nonRepositorySessionCwd);
 

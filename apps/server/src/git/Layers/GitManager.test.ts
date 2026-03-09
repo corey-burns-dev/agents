@@ -121,7 +121,7 @@ function createBareRemote(): Effect.Effect<
 	FileSystem.FileSystem | Scope.Scope | GitService
 > {
 	return Effect.gen(function* () {
-		const remoteDir = yield* makeTempDir("agentz-git-remote-");
+		const remoteDir = yield* makeTempDir("agents-git-remote-");
 		yield* runGit(remoteDir, ["init", "--bare"]);
 		return remoteDir;
 	});
@@ -368,7 +368,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 		"status includes PR metadata when branch already has an open PR",
 		() =>
 			Effect.gen(function* () {
-				const repoDir = yield* makeTempDir("agentz-git-manager-");
+				const repoDir = yield* makeTempDir("agents-git-manager-");
 				yield* initRepo(repoDir);
 				yield* runGit(repoDir, ["checkout", "-b", "feature/status-open-pr"]);
 				const remoteDir = yield* createBareRemote();
@@ -411,7 +411,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("status returns merged PR state when latest PR was merged", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 			yield* runGit(repoDir, ["checkout", "-b", "feature/status-merged-pr"]);
 
@@ -449,7 +449,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("status prefers open PR when merged PR has newer updatedAt", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 			yield* runGit(repoDir, [
 				"checkout",
@@ -502,7 +502,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 		"status is resilient to gh lookup failures and returns pr null",
 		() =>
 			Effect.gen(function* () {
-				const repoDir = yield* makeTempDir("agentz-git-manager-");
+				const repoDir = yield* makeTempDir("agents-git-manager-");
 				yield* initRepo(repoDir);
 				yield* runGit(repoDir, ["checkout", "-b", "feature/status-no-gh"]);
 				const remoteDir = yield* createBareRemote();
@@ -532,7 +532,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("creates a commit when working tree is dirty", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 			fs.writeFileSync(path.join(repoDir, "README.md"), "hello\nworld\n");
 
@@ -556,7 +556,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("uses custom commit message when provided", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 			fs.writeFileSync(path.join(repoDir, "README.md"), "hello\ncustom\n");
 			let generatedCount = 0;
@@ -601,7 +601,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 		"creates feature branch, commits, and pushes with featureBranch option",
 		() =>
 			Effect.gen(function* () {
-				const repoDir = yield* makeTempDir("agentz-git-manager-");
+				const repoDir = yield* makeTempDir("agents-git-manager-");
 				yield* initRepo(repoDir);
 				const remoteDir = yield* createBareRemote();
 				yield* runGit(repoDir, ["remote", "add", "origin", remoteDir]);
@@ -662,7 +662,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 		"featureBranch uses custom commit message and derives branch name",
 		() =>
 			Effect.gen(function* () {
-				const repoDir = yield* makeTempDir("agentz-git-manager-");
+				const repoDir = yield* makeTempDir("agents-git-manager-");
 				yield* initRepo(repoDir);
 				fs.writeFileSync(
 					path.join(repoDir, "README.md"),
@@ -710,7 +710,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("skips commit when there are no uncommitted changes", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 
 			const { manager } = yield* makeManager();
@@ -728,7 +728,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("featureBranch returns error when worktree is clean", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 
 			const { manager } = yield* makeManager();
@@ -747,7 +747,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("commits and pushes with upstream auto-setup when needed", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 			yield* runGit(repoDir, ["checkout", "-b", "feature/stacked-flow"]);
 			const remoteDir = yield* createBareRemote();
@@ -778,7 +778,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 		"pushes and creates PR from a no-upstream branch when local commits are ahead of base",
 		() =>
 			Effect.gen(function* () {
-				const repoDir = yield* makeTempDir("agentz-git-manager-");
+				const repoDir = yield* makeTempDir("agents-git-manager-");
 				yield* initRepo(repoDir);
 				yield* runGit(repoDir, ["checkout", "-b", "feature/no-upstream-pr"]);
 				const remoteDir = yield* createBareRemote();
@@ -831,7 +831,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("skips push when branch is already up to date", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 			yield* runGit(repoDir, ["checkout", "-b", "feature/up-to-date"]);
 			const remoteDir = yield* createBareRemote();
@@ -852,7 +852,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("returns existing PR metadata for commit/push/pr action", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 			yield* runGit(repoDir, ["checkout", "-b", "feature/existing-pr"]);
 			const remoteDir = yield* createBareRemote();
@@ -888,7 +888,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("creates PR when one does not already exist", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 			yield* runGit(repoDir, ["checkout", "-b", "feature-create-pr"]);
 			const remoteDir = yield* createBareRemote();
@@ -938,7 +938,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("rejects push/pr actions from detached HEAD", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 			yield* runGit(repoDir, ["checkout", "--detach", "HEAD"]);
 
@@ -956,7 +956,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("surfaces missing gh binary errors", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 			yield* runGit(repoDir, ["checkout", "-b", "feature/gh-missing"]);
 			const remoteDir = yield* createBareRemote();
@@ -985,7 +985,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 
 	it.effect("surfaces gh auth errors with guidance", () =>
 		Effect.gen(function* () {
-			const repoDir = yield* makeTempDir("agentz-git-manager-");
+			const repoDir = yield* makeTempDir("agents-git-manager-");
 			yield* initRepo(repoDir);
 			yield* runGit(repoDir, ["checkout", "-b", "feature/gh-auth"]);
 			const remoteDir = yield* createBareRemote();

@@ -5,7 +5,7 @@ import type {
 	ProjectEntry,
 	ProjectSearchEntriesInput,
 	ProjectSearchEntriesResult,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { runProcess } from "./processRunner";
 
 const WORKSPACE_CACHE_TTL_MS = 15_000;

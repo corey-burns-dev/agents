@@ -152,5 +152,5 @@ export function isCodexCliVersionSupported(version: string): boolean {
 
 export function formatCodexCliUpgradeMessage(version: string | null): string {
 	const versionLabel = version ? `v${version}` : "the installed version";
-	return `Codex CLI ${versionLabel} is too old for Agentz. Upgrade to v${MINIMUM_CODEX_CLI_VERSION} or newer and restart Agentz.`;
+	return `Codex CLI ${versionLabel} is too old for Agents. Upgrade to v${MINIMUM_CODEX_CLI_VERSION} or newer and restart Agents.`;
 }

@@ -13,7 +13,7 @@ import {
 	OrchestrationMessageRole,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect } from "effect";
 import { Schema, ServiceMap } from "effect";
 
@@ -84,5 +84,5 @@ export class ProjectionThreadMessageRepository extends ServiceMap.Service<
 	ProjectionThreadMessageRepository,
 	ProjectionThreadMessageRepositoryShape
 >()(
-	"agentz/persistence/Services/ProjectionThreadMessages/ProjectionThreadMessageRepository",
+	"agents/persistence/Services/ProjectionThreadMessages/ProjectionThreadMessageRepository",
 ) {}

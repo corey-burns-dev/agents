@@ -10,7 +10,7 @@ import {
 	RuntimeSessionId,
 	type ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Effect, Queue, Stream } from "effect";
 
 import {

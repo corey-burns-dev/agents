@@ -9,7 +9,7 @@ import {
 	MessageId,
 	ProjectId,
 	ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { assert, it } from "@effect/vitest";
 import { Effect, Option, Schema } from "effect";
 import { checkpointRefForThreadTurn } from "../src/checkpointing/Utils.ts";

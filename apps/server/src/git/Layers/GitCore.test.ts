@@ -989,30 +989,30 @@ it.layer(TestLayer)("git integration", (it) => {
 			Effect.gen(function* () {
 				const tmp = yield* makeTmpDir();
 				yield* initRepoWithCommit(tmp);
-				yield* createGitBranch({ cwd: tmp, branch: "agentz/feat/session" });
-				yield* createGitBranch({ cwd: tmp, branch: "agentz/tmp-working" });
-				yield* checkoutGitBranch({ cwd: tmp, branch: "agentz/tmp-working" });
+				yield* createGitBranch({ cwd: tmp, branch: "agents/feat/session" });
+				yield* createGitBranch({ cwd: tmp, branch: "agents/tmp-working" });
+				yield* checkoutGitBranch({ cwd: tmp, branch: "agents/tmp-working" });
 
 				const renamed = yield* renameGitBranch({
 					cwd: tmp,
-					oldBranch: "agentz/tmp-working",
-					newBranch: "agentz/feat/session",
+					oldBranch: "agents/tmp-working",
+					newBranch: "agents/feat/session",
 				});
 
-				expect(renamed.branch).toBe("agentz/feat/session-1");
+				expect(renamed.branch).toBe("agents/feat/session-1");
 				const branches = yield* listGitBranches({ cwd: tmp });
 				expect(
 					branches.branches.some(
-						(branch) => branch.name === "agentz/feat/session",
+						(branch) => branch.name === "agents/feat/session",
 					),
 				).toBe(true);
 				expect(
 					branches.branches.some(
-						(branch) => branch.name === "agentz/feat/session-1",
+						(branch) => branch.name === "agents/feat/session-1",
 					),
 				).toBe(true);
 				const current = branches.branches.find((branch) => branch.current);
-				expect(current?.name).toBe("agentz/feat/session-1");
+				expect(current?.name).toBe("agents/feat/session-1");
 			}),
 		);
 
@@ -1020,18 +1020,18 @@ it.layer(TestLayer)("git integration", (it) => {
 			Effect.gen(function* () {
 				const tmp = yield* makeTmpDir();
 				yield* initRepoWithCommit(tmp);
-				yield* createGitBranch({ cwd: tmp, branch: "agentz/feat/session" });
-				yield* createGitBranch({ cwd: tmp, branch: "agentz/feat/session-1" });
-				yield* createGitBranch({ cwd: tmp, branch: "agentz/tmp-working" });
-				yield* checkoutGitBranch({ cwd: tmp, branch: "agentz/tmp-working" });
+				yield* createGitBranch({ cwd: tmp, branch: "agents/feat/session" });
+				yield* createGitBranch({ cwd: tmp, branch: "agents/feat/session-1" });
+				yield* createGitBranch({ cwd: tmp, branch: "agents/tmp-working" });
+				yield* checkoutGitBranch({ cwd: tmp, branch: "agents/tmp-working" });
 
 				const renamed = yield* renameGitBranch({
 					cwd: tmp,
-					oldBranch: "agentz/tmp-working",
-					newBranch: "agentz/feat/session",
+					oldBranch: "agents/tmp-working",
+					newBranch: "agents/feat/session",
 				});
 
-				expect(renamed.branch).toBe("agentz/feat/session-2");
+				expect(renamed.branch).toBe("agents/feat/session-2");
 			}),
 		);
 

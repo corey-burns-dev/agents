@@ -6,7 +6,7 @@
  *
  * @module ProjectionProjectRepository
  */
-import { IsoDateTime, ProjectId, ProjectScript } from "@agentz/contracts";
+import { IsoDateTime, ProjectId, ProjectScript } from "@agents/contracts";
 import type { Effect } from "effect";
 import { type Option, Schema, ServiceMap } from "effect";
 
@@ -83,5 +83,5 @@ export class ProjectionProjectRepository extends ServiceMap.Service<
 	ProjectionProjectRepository,
 	ProjectionProjectRepositoryShape
 >()(
-	"agentz/persistence/Services/ProjectionProjects/ProjectionProjectRepository",
+	"agents/persistence/Services/ProjectionProjects/ProjectionProjectRepository",
 ) {}

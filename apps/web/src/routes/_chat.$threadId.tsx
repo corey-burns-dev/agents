@@ -1,4 +1,4 @@
-import { ThreadId } from "@agentz/contracts";
+import { ThreadId } from "@agents/contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { lazy, type ReactNode, Suspense, useCallback, useEffect } from "react";
 import {

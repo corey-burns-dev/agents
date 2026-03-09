@@ -1,4 +1,4 @@
-import { ThreadId } from "@agentz/contracts";
+import { ThreadId } from "@agents/contracts";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,

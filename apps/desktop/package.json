@@ -1,5 +1,5 @@
 {
-	"name": "@agentz/desktop",
+	"name": "@agents/desktop",
 	"version": "0.0.4-alpha.1",
 	"private": true,
 	"scripts": {
@@ -15,11 +15,11 @@
 	},
 	"devDependencies": {
 		"@tauri-apps/cli": "^2",
-		"@agentz/contracts": "workspace:*",
-		"@agentz/shared": "workspace:*",
+		"@agents/contracts": "workspace:*",
+		"@agents/shared": "workspace:*",
 		"@types/node": "catalog:",
 		"typescript": "catalog:",
 		"vitest": "catalog:"
 	},
-	"productName": "Agentz (Alpha)"
+	"productName": "Agents (Alpha)"
 }

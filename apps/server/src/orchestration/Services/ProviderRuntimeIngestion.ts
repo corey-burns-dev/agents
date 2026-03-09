@@ -33,5 +33,5 @@ export class ProviderRuntimeIngestionService extends ServiceMap.Service<
 	ProviderRuntimeIngestionService,
 	ProviderRuntimeIngestionShape
 >()(
-	"agentz/orchestration/Services/ProviderRuntimeIngestion/ProviderRuntimeIngestionService",
+	"agents/orchestration/Services/ProviderRuntimeIngestion/ProviderRuntimeIngestionService",
 ) {}

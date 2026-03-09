@@ -1,8 +1,8 @@
 [package]
-name = "agentz"
+name = "agents"
 version = "0.0.4-alpha.1"
-description = "Agentz desktop application"
-authors = ["T3 Tools"]
+description = "Agents desktop application"
+authors = ["Agents Tools"]
 license = ""
 repository = ""
 edition = "2021"

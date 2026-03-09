@@ -1,4 +1,4 @@
-import type { GitBranch } from "@agentz/contracts";
+import type { GitBranch } from "@agents/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDownIcon } from "lucide-react";

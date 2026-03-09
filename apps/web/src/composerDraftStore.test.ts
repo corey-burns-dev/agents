@@ -1,4 +1,4 @@
-import { ProjectId, ThreadId } from "@agentz/contracts";
+import { ProjectId, ThreadId } from "@agents/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {

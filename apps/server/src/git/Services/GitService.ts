@@ -46,4 +46,4 @@ export interface GitServiceShape {
 export class GitService extends ServiceMap.Service<
 	GitService,
 	GitServiceShape
->()("agentz/git/Services/GitService") {}
+>()("agents/git/Services/GitService") {}

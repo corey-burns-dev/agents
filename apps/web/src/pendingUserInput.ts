@@ -1,4 +1,4 @@
-import type { UserInputQuestion } from "@agentz/contracts";
+import type { UserInputQuestion } from "@agents/contracts";
 
 export interface PendingUserInputDraftAnswer {
 	selectedOptionLabel?: string;

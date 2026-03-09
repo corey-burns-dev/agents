@@ -36,7 +36,7 @@ export interface ServerConfigShape {
 export class ServerConfig extends ServiceMap.Service<
 	ServerConfig,
 	ServerConfigShape
->()("agentz/config/ServerConfig") {
+>()("agents/config/ServerConfig") {
 	static readonly layerTest = (cwd: string, statedir: string) =>
 		Layer.effect(
 			ServerConfig,

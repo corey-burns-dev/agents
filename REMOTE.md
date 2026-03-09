@@ -1,20 +1,20 @@
 # Remote Access Setup
 
-Use this when you want to open Agentz from another device (phone, tablet, another laptop).
+Use this when you want to open Agents from another device (phone, tablet, another laptop).
 
 ## CLI ↔ Env option map
 
-The Agentz CLI accepts the following configuration options, available either as CLI flags or environment variables:
+The Agents CLI accepts the following configuration options, available either as CLI flags or environment variables:
 
 | CLI flag                | Env var               | Notes                              |
 | ----------------------- | --------------------- | ---------------------------------- |
-| `--mode <web\|desktop>` | `AGENTZ_MODE`         | Runtime mode.                      |
-| `--port <number>`       | `AGENTZ_PORT`         | HTTP/WebSocket port.               |
-| `--host <address>`      | `AGENTZ_HOST`         | Bind interface/address.            |
-| `--state-dir <path>`    | `AGENTZ_STATE_DIR`    | State directory.                   |
+| `--mode <web\|desktop>` | `AGENTS_MODE`         | Runtime mode.                      |
+| `--port <number>`       | `AGENTS_PORT`         | HTTP/WebSocket port.               |
+| `--host <address>`      | `AGENTS_HOST`         | Bind interface/address.            |
+| `--state-dir <path>`    | `AGENTS_STATE_DIR`    | State directory.                   |
 | `--dev-url <url>`       | `VITE_DEV_SERVER_URL` | Dev web URL redirect/proxy target. |
-| `--no-browser`          | `AGENTZ_NO_BROWSER`   | Disable auto-open browser.         |
-| `--auth-token <token>`  | `AGENTZ_AUTH_TOKEN`   | WebSocket auth token.              |
+| `--no-browser`          | `AGENTS_NO_BROWSER`   | Disable auto-open browser.         |
+| `--auth-token <token>`  | `AGENTS_AUTH_TOKEN`   | WebSocket auth token.              |
 
 > TIP: Use the `--help` flag to see all available options and their descriptions.
 

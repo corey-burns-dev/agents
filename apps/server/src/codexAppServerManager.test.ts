@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { ApprovalRequestId, ThreadId } from "@agentz/contracts";
+import { ApprovalRequestId, ThreadId } from "@agents/contracts";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -296,8 +296,8 @@ describe("startSession", () => {
 	it("enables Codex experimental api capabilities during initialize", () => {
 		expect(buildCodexInitializeParams()).toEqual({
 			clientInfo: {
-				name: "agentz_desktop",
-				title: "Agentz Desktop",
+				name: "agents_desktop",
+				title: "Agents Desktop",
 				version: "0.1.0",
 			},
 			capabilities: {
@@ -366,7 +366,7 @@ describe("startSession", () => {
 			)
 			.mockImplementation(() => {
 				throw new Error(
-					"Codex CLI v0.36.0 is too old for Agentz. Upgrade to v0.37.0 or newer and restart Agentz.",
+					"Codex CLI v0.36.0 is too old for Agents. Upgrade to v0.37.0 or newer and restart Agents.",
 				);
 			});
 
@@ -378,7 +378,7 @@ describe("startSession", () => {
 					runtimeMode: "full-access",
 				}),
 			).rejects.toThrow(
-				"Codex CLI v0.36.0 is too old for Agentz. Upgrade to v0.37.0 or newer and restart Agentz.",
+				"Codex CLI v0.36.0 is too old for Agents. Upgrade to v0.37.0 or newer and restart Agents.",
 			);
 			expect(versionCheck).toHaveBeenCalledTimes(1);
 			expect(events).toEqual([
@@ -386,7 +386,7 @@ describe("startSession", () => {
 					method: "session/startFailed",
 					kind: "error",
 					message:
-						"Codex CLI v0.36.0 is too old for Agentz. Upgrade to v0.37.0 or newer and restart Agentz.",
+						"Codex CLI v0.36.0 is too old for Agents. Upgrade to v0.37.0 or newer and restart Agents.",
 				},
 			]);
 		} finally {

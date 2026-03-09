@@ -1,3 +1,3 @@
 fn main() {
-    agentz::run()
+    agents::run()
 }

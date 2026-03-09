@@ -5,7 +5,7 @@ import {
 	ProjectId,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Effect, Layer } from "effect";
 import { describe, expect, it } from "vitest";
 

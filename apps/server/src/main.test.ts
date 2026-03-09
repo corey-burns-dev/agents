@@ -1,6 +1,6 @@
 import type * as Http from "node:http";
-import type { OrchestrationReadModel } from "@agentz/contracts";
-import { NetService } from "@agentz/shared/Net";
+import type { OrchestrationReadModel } from "@agents/contracts";
+import { NetService } from "@agents/shared/Net";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it, vi } from "@effect/vitest";
 import * as ConfigProvider from "effect/ConfigProvider";
@@ -11,7 +11,7 @@ import { FetchHttpClient } from "effect/unstable/http";
 import { beforeEach } from "vitest";
 import { ServerConfig, type ServerConfigShape } from "./config";
 import {
-	agentzCli,
+	agentsCli,
 	CliConfig,
 	type CliConfigShape,
 	recordStartupHeartbeat,
@@ -39,7 +39,7 @@ const findAvailablePort = vi.fn((preferred: number) =>
 // Shared service layer used by this CLI test suite.
 const testLayer = Layer.mergeAll(
 	Layer.succeed(CliConfig, {
-		cwd: "/tmp/t3-test-workspace",
+		cwd: "/tmp/agents-test-workspace",
 		fixPath: Effect.void,
 		resolveStaticDir: Effect.undefined,
 	} satisfies CliConfigShape),
@@ -64,15 +64,15 @@ const testLayer = Layer.mergeAll(
 
 const runCli = (
 	args: ReadonlyArray<string>,
-	env: Record<string, string> = { T3CODE_NO_BROWSER: "true" },
+	env: Record<string, string> = { AGENTS_NO_BROWSER: "true" },
 ) => {
-	const uniqueStateDir = `/tmp/t3-cli-state-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-	return Command.runWith(agentzCli, { version: "0.0.0-test" })(args).pipe(
+	const uniqueStateDir = `/tmp/agents-cli-state-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+	return Command.runWith(agentsCli, { version: "0.0.0-test" })(args).pipe(
 		Effect.provide(
 			ConfigProvider.layer(
 				ConfigProvider.fromEnv({
 					env: {
-						T3CODE_STATE_DIR: uniqueStateDir,
+						AGENTS_STATE_DIR: uniqueStateDir,
 						...env,
 					},
 				}),
@@ -102,7 +102,7 @@ it.layer(testLayer)("server CLI command", (it) => {
 				"--host",
 				"0.0.0.0",
 				"--state-dir",
-				"/tmp/t3-cli-state",
+				"/tmp/agents-cli-state",
 				"--dev-url",
 				"http://127.0.0.1:5173",
 				"--no-browser",
@@ -114,7 +114,7 @@ it.layer(testLayer)("server CLI command", (it) => {
 			assert.equal(resolvedConfig?.mode, "desktop");
 			assert.equal(resolvedConfig?.port, 4010);
 			assert.equal(resolvedConfig?.host, "0.0.0.0");
-			assert.equal(resolvedConfig?.stateDir, "/tmp/t3-cli-state");
+			assert.equal(resolvedConfig?.stateDir, "/tmp/agents-cli-state");
 			assert.equal(
 				resolvedConfig?.devUrl?.toString(),
 				"http://127.0.0.1:5173/",
@@ -139,20 +139,20 @@ it.layer(testLayer)("server CLI command", (it) => {
 	it.effect("uses env fallbacks when flags are not provided", () =>
 		Effect.gen(function* () {
 			yield* runCli([], {
-				T3CODE_MODE: "desktop",
-				T3CODE_PORT: "4999",
-				T3CODE_HOST: "100.88.10.4",
-				T3CODE_STATE_DIR: "/tmp/t3-env-state",
+				AGENTS_MODE: "desktop",
+				AGENTS_PORT: "4999",
+				AGENTS_HOST: "100.88.10.4",
+				AGENTS_STATE_DIR: "/tmp/agents-env-state",
 				VITE_DEV_SERVER_URL: "http://localhost:5173",
-				T3CODE_NO_BROWSER: "true",
-				T3CODE_AUTH_TOKEN: "env-token",
+				AGENTS_NO_BROWSER: "true",
+				AGENTS_AUTH_TOKEN: "env-token",
 			});
 
 			assert.equal(start.mock.calls.length, 1);
 			assert.equal(resolvedConfig?.mode, "desktop");
 			assert.equal(resolvedConfig?.port, 4999);
 			assert.equal(resolvedConfig?.host, "100.88.10.4");
-			assert.equal(resolvedConfig?.stateDir, "/tmp/t3-env-state");
+			assert.equal(resolvedConfig?.stateDir, "/tmp/agents-env-state");
 			assert.equal(
 				resolvedConfig?.devUrl?.toString(),
 				"http://localhost:5173/",
@@ -165,14 +165,14 @@ it.layer(testLayer)("server CLI command", (it) => {
 		}),
 	);
 
-	it.effect("prefers --mode over T3CODE_MODE", () =>
+	it.effect("prefers --mode over AGENTS_MODE", () =>
 		Effect.gen(function* () {
 			findAvailablePort.mockImplementation((_preferred: number) =>
 				Effect.succeed(4666),
 			);
 			yield* runCli(["--mode", "web"], {
-				T3CODE_MODE: "desktop",
-				T3CODE_NO_BROWSER: "true",
+				AGENTS_MODE: "desktop",
+				AGENTS_NO_BROWSER: "true",
 			});
 
 			assert.deepStrictEqual(findAvailablePort.mock.calls, [[3773]]);
@@ -183,15 +183,14 @@ it.layer(testLayer)("server CLI command", (it) => {
 		}),
 	);
 
-	it.effect("prefers AGENTZ_MODE over T3CODE_MODE when both set", () =>
+	it.effect("prefers AGENTS_MODE over AGENTS_MODE when both set", () =>
 		Effect.gen(function* () {
 			findAvailablePort.mockImplementation((_p: number) =>
 				Effect.succeed(3773),
 			);
 			yield* runCli([], {
-				AGENTZ_MODE: "web",
-				T3CODE_MODE: "desktop",
-				T3CODE_NO_BROWSER: "true",
+				AGENTS_MODE: "desktop",
+				AGENTS_NO_BROWSER: "true",
 			});
 
 			assert.equal(start.mock.calls.length, 1);
@@ -199,10 +198,10 @@ it.layer(testLayer)("server CLI command", (it) => {
 		}),
 	);
 
-	it.effect("prefers --no-browser over T3CODE_NO_BROWSER", () =>
+	it.effect("prefers --no-browser over AGENTS_NO_BROWSER", () =>
 		Effect.gen(function* () {
 			yield* runCli(["--no-browser"], {
-				T3CODE_NO_BROWSER: "false",
+				AGENTS_NO_BROWSER: "false",
 			});
 
 			assert.equal(start.mock.calls.length, 1);
@@ -229,8 +228,8 @@ it.layer(testLayer)("server CLI command", (it) => {
 	it.effect("uses fixed localhost defaults in desktop mode", () =>
 		Effect.gen(function* () {
 			yield* runCli([], {
-				T3CODE_MODE: "desktop",
-				T3CODE_NO_BROWSER: "true",
+				AGENTS_MODE: "desktop",
+				AGENTS_NO_BROWSER: "true",
 			});
 
 			assert.equal(findAvailablePort.mock.calls.length, 0);
@@ -244,8 +243,8 @@ it.layer(testLayer)("server CLI command", (it) => {
 	it.effect("allows overriding desktop host with --host", () =>
 		Effect.gen(function* () {
 			yield* runCli(["--host", "0.0.0.0"], {
-				T3CODE_MODE: "desktop",
-				T3CODE_NO_BROWSER: "true",
+				AGENTS_MODE: "desktop",
+				AGENTS_NO_BROWSER: "true",
 			});
 
 			assert.equal(start.mock.calls.length, 1);
@@ -257,10 +256,10 @@ it.layer(testLayer)("server CLI command", (it) => {
 	it.effect("supports CLI and env for bootstrap/log websocket toggles", () =>
 		Effect.gen(function* () {
 			yield* runCli(["--auto-bootstrap-project-from-cwd"], {
-				T3CODE_MODE: "desktop",
-				T3CODE_LOG_WS_EVENTS: "false",
-				T3CODE_AUTO_BOOTSTRAP_PROJECT_FROM_CWD: "false",
-				T3CODE_NO_BROWSER: "true",
+				AGENTS_MODE: "desktop",
+				AGENTS_LOG_WS_EVENTS: "false",
+				AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD: "false",
+				AGENTS_NO_BROWSER: "true",
 			});
 
 			assert.equal(start.mock.calls.length, 1);

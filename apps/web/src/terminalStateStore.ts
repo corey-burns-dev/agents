@@ -5,7 +5,7 @@
  * API constrained to store actions/selectors.
  */
 
-import type { ThreadId } from "@agentz/contracts";
+import type { ThreadId } from "@agents/contracts";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import {
@@ -25,7 +25,7 @@ interface ThreadTerminalState {
 	activeTerminalGroupId: string;
 }
 
-const TERMINAL_STATE_STORAGE_KEY = "agentz:terminal-state:v1";
+const TERMINAL_STATE_STORAGE_KEY = "agents:terminal-state:v1";
 
 function normalizeTerminalIds(terminalIds: string[]): string[] {
 	const ids = [

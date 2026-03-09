@@ -1,4 +1,4 @@
-import type { ProviderKind } from "@agentz/contracts";
+import type { ProviderKind } from "@agents/contracts";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it, vi } from "@effect/vitest";
 import { assertFailure } from "@effect/vitest/utils";

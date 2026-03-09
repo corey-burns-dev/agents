@@ -1,4 +1,4 @@
-import type { ProviderKind, ThreadId } from "@agentz/contracts";
+import type { ProviderKind, ThreadId } from "@agents/contracts";
 import { Effect, Layer, Option } from "effect";
 
 import { ProviderSessionRuntimeRepository } from "../../persistence/Services/ProviderSessionRuntime.ts";

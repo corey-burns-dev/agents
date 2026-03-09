@@ -9,7 +9,7 @@ import {
 	WS_CHANNELS,
 	WS_METHODS,
 	WsWelcomePayload,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Cause, Schema } from "effect";
 
 import { showContextMenuFallback } from "./contextMenuFallback";

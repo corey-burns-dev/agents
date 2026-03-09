@@ -23,7 +23,7 @@ import type {
 	ProviderStopSessionInput,
 	ProviderTurnStartResult,
 	ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect, Stream } from "effect";
 import { ServiceMap } from "effect";
 
@@ -113,4 +113,4 @@ export interface ProviderServiceShape {
 export class ProviderService extends ServiceMap.Service<
 	ProviderService,
 	ProviderServiceShape
->()("agentz/provider/Services/ProviderService") {}
+>()("agents/provider/Services/ProviderService") {}

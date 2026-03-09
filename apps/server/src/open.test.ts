@@ -130,7 +130,7 @@ describe("launchDetached", () => {
 	it.effect("rejects when command does not exist", () =>
 		Effect.gen(function* () {
 			const result = yield* launchDetached({
-				command: `agentz-no-such-command-${Date.now()}`,
+				command: `agents-no-such-command-${Date.now()}`,
 				args: [],
 			}).pipe(Effect.result);
 			assert.equal(result._tag, "Failure");
@@ -140,7 +140,7 @@ describe("launchDetached", () => {
 
 describe("isCommandAvailable", () => {
 	function withTempDir(run: (dir: string) => void): void {
-		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "t3-open-"));
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agents-open-"));
 		try {
 			run(dir);
 		} finally {
@@ -227,7 +227,7 @@ describe("isCommandAvailable", () => {
 
 describe("resolveAvailableEditors", () => {
 	it("returns only editors whose launch commands are available", () => {
-		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "t3-editors-"));
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agents-editors-"));
 		try {
 			fs.writeFileSync(path.join(dir, "cursor.CMD"), "@echo off\r\n", "utf8");
 			fs.writeFileSync(path.join(dir, "explorer.EXE"), "MZ", "utf8");

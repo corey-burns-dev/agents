@@ -1,5 +1,5 @@
 import * as OS from "node:os";
-import { readPathFromLoginShell } from "@agentz/shared/shell";
+import { readPathFromLoginShell } from "@agents/shared/shell";
 import { Effect, Path } from "effect";
 
 export function fixPath(): void {
@@ -30,7 +30,7 @@ export const expandHomePath = Effect.fn(function* (input: string) {
 export const resolveStateDir = Effect.fn(function* (raw: string | undefined) {
 	const { join, resolve } = yield* Path.Path;
 	if (!raw || raw.trim().length === 0) {
-		return join(OS.homedir(), ".agentz", "userdata");
+		return join(OS.homedir(), ".agents", "userdata");
 	}
 	return resolve(yield* expandHomePath(raw.trim()));
 });

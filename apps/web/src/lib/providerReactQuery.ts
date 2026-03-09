@@ -2,7 +2,7 @@ import {
 	OrchestrationGetFullThreadDiffInput,
 	OrchestrationGetTurnDiffInput,
 	type ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { queryOptions } from "@tanstack/react-query";
 import { Option, Schema } from "effect";
 import { ensureNativeApi } from "../nativeApi";

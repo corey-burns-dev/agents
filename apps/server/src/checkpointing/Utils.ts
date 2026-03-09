@@ -2,10 +2,10 @@ import {
 	CheckpointRef,
 	type ProjectId,
 	type ThreadId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Encoding } from "effect";
 
-export const CHECKPOINT_REFS_PREFIX = "refs/agentz/checkpoints";
+export const CHECKPOINT_REFS_PREFIX = "refs/agents/checkpoints";
 
 export function checkpointRefForThreadTurn(
 	threadId: ThreadId,

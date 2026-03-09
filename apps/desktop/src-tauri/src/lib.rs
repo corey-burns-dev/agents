@@ -1,4 +1,4 @@
-//! Agentz desktop application — Tauri entry and setup.
+//! Agents desktop application — Tauri entry and setup.
 //! DesktopBridge commands, backend spawning, and window lifecycle are implemented here.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]

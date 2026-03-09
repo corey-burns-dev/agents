@@ -1,4 +1,4 @@
-import { ProjectId, ThreadId } from "@agentz/contracts";
+import { ProjectId, ThreadId } from "@agents/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -103,19 +103,19 @@ describe("getOrphanedWorktreePathForThread", () => {
 describe("formatWorktreePathForDisplay", () => {
 	it("shows only the last path segment for unix-like paths", () => {
 		const result = formatWorktreePathForDisplay(
-			"/Users/julius/.agentz/worktrees/agentz-mvp/agentz-4e609bb8",
+			"/Users/julius/.agents/worktrees/agents-mvp/agents-4e609bb8",
 		);
-		expect(result).toBe("agentz-4e609bb8");
+		expect(result).toBe("agents-4e609bb8");
 	});
 
 	it("normalizes windows separators before selecting the final segment", () => {
 		const result = formatWorktreePathForDisplay(
-			"C:\\Users\\julius\\.agentz\\worktrees\\agentz-mvp\\agentz-4e609bb8",
+			"C:\\Users\\julius\\.agents\\worktrees\\agents-mvp\\agents-4e609bb8",
 		);
-		expect(result).toBe("agentz-4e609bb8");
+		expect(result).toBe("agents-4e609bb8");
 	});
 
-	it("uses the final segment even when outside ~/.agentz/worktrees", () => {
+	it("uses the final segment even when outside ~/.agents/worktrees", () => {
 		const result = formatWorktreePathForDisplay(
 			"/tmp/custom-worktrees/my-worktree",
 		);

@@ -3,7 +3,7 @@ import {
 	type OrchestrationGetFullThreadDiffResult,
 	OrchestrationGetTurnDiffResult,
 	type OrchestrationGetTurnDiffResult as OrchestrationGetTurnDiffResultType,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { Effect, Layer, Schema } from "effect";
 
 import { ProjectionSnapshotQuery } from "../../orchestration/Services/ProjectionSnapshotQuery.ts";

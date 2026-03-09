@@ -3,7 +3,7 @@ import {
 	MessageId,
 	type OrchestrationThreadActivity,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import { describe, expect, it } from "vitest";
 
 import {

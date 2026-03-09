@@ -6,7 +6,7 @@
  *
  * @module ProjectionStateRepository
  */
-import { IsoDateTime, NonNegativeInt } from "@agentz/contracts";
+import { IsoDateTime, NonNegativeInt } from "@agents/contracts";
 import type { Effect } from "effect";
 import { type Option, Schema, ServiceMap } from "effect";
 
@@ -69,4 +69,4 @@ export interface ProjectionStateRepositoryShape {
 export class ProjectionStateRepository extends ServiceMap.Service<
 	ProjectionStateRepository,
 	ProjectionStateRepositoryShape
->()("agentz/persistence/Services/ProjectionState/ProjectionStateRepository") {}
+>()("agents/persistence/Services/ProjectionState/ProjectionStateRepository") {}

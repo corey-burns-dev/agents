@@ -1,4 +1,4 @@
-import type { ProjectSearchEntriesResult } from "@agentz/contracts";
+import type { ProjectSearchEntriesResult } from "@agents/contracts";
 import { queryOptions } from "@tanstack/react-query";
 import { ensureNativeApi } from "~/nativeApi";
 

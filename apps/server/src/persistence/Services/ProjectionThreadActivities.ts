@@ -13,7 +13,7 @@ import {
 	OrchestrationThreadActivityTone,
 	ThreadId,
 	TurnId,
-} from "@agentz/contracts";
+} from "@agents/contracts";
 import type { Effect } from "effect";
 import { Schema, ServiceMap } from "effect";
 
@@ -85,5 +85,5 @@ export class ProjectionThreadActivityRepository extends ServiceMap.Service<
 	ProjectionThreadActivityRepository,
 	ProjectionThreadActivityRepositoryShape
 >()(
-	"agentz/persistence/Services/ProjectionThreadActivities/ProjectionThreadActivityRepository",
+	"agents/persistence/Services/ProjectionThreadActivities/ProjectionThreadActivityRepository",
 ) {}

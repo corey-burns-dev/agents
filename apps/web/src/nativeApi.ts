@@ -1,4 +1,4 @@
-import type { NativeApi } from "@agentz/contracts";
+import type { NativeApi } from "@agents/contracts";
 
 import { createWsNativeApi } from "./wsNativeApi";
 
