@@ -21,7 +21,14 @@ import { isMacPlatform, isWindowsPlatform } from "../lib/utils";
 import { readNativeApi } from "../nativeApi";
 
 import GitActionsControl from "./GitActionsControl";
-import { CursorIcon, type Icon, VisualStudioCode, Zed } from "./Icons";
+import {
+	Antigravity,
+	CursorIcon,
+	type Icon,
+	VisualStudioCode,
+	VisualStudioCodeInsiders,
+	Zed,
+} from "./Icons";
 import ProjectScriptsControl, {
 	type NewProjectScriptInput,
 } from "./ProjectScriptsControl";
@@ -232,11 +239,11 @@ const OpenInPicker = memo(function OpenInPicker({
 			{ label: "VS Code", Icon: VisualStudioCode, value: "vscode" },
 			{
 				label: "VS Code Insiders",
-				Icon: VisualStudioCode,
+				Icon: VisualStudioCodeInsiders,
 				value: "code-insiders",
 			},
 			{ label: "Zed", Icon: Zed, value: "zed" },
-			{ label: "Antigravity", Icon: CursorIcon, value: "antigravity" },
+			{ label: "Antigravity", Icon: Antigravity, value: "antigravity" },
 			{
 				label: isMacPlatform(navigator.platform)
 					? "Finder"
