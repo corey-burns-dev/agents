@@ -1,0 +1,21 @@
+services:
+  agents:
+    build: .
+    ports:
+      - "3773:3773"
+    environment:
+      - AGENTS_PORT=3773
+      - AGENTS_HOST=0.0.0.0
+      - AGENTS_MODE=web
+      - AGENTS_STATE_DIR=/app/state
+      - AGENTS_NO_BROWSER=true
+      - AGENTS_AUTH_TOKEN=${AGENTS_AUTH_TOKEN:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_GENERATIVE_AI_API_KEY:-}
+    volumes:
+      - agents-state:/app/state
+    restart: unless-stopped
+
+volumes:
+  agents-state:

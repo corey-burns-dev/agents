@@ -101,12 +101,33 @@ From the repository root:
 You can still use Agents as a web application running in your browser:
 
 ```bash
-# Start the web and server dev runner
+# Start the web and server dev runner (uses your local tools, including gh if installed)
 bun run dev
 
 # Or via npx
 npx agents
 ```
+
+### Local development vs Docker
+
+- **Local development (recommended for contributors)**:
+  - Runs directly on your host using your locally installed tools (e.g. `gh`, `git`, CLI auth, SSH keys).
+  - From the repo root:
+    ```bash
+    bun install
+    make dev        # or: make dev-server / make dev-web
+    ```
+  - When you run these commands, the server and web apps use **your host environment** and whatever `gh`/Git configuration you already have.
+
+- **Docker (optional, self-contained)**:
+  - Intended for users who just want to run Agents without setting up the full toolchain locally.
+  - The Docker image includes `gh` and other runtime dependencies inside the container, isolated from your host.
+  - From the repo root:
+    ```bash
+    make docker-build   # Build the image (uses Dockerfile)
+    make docker-up      # Start Agents with Docker Compose
+    # make docker-down  # Stop the container
+    ```
 
 ## Notes
 

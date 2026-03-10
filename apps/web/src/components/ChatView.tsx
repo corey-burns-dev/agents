@@ -445,6 +445,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 	);
 	const diffOpen = diffSearch.diff === "1";
 	const projectDockOpen = diffSearch.projectDock === "1" && !diffOpen;
+	const rightDockOpen = diffOpen || projectDockOpen;
 	const activeThreadId = activeThread?.id ?? null;
 	const activeLatestTurn = activeThread?.latestTurn ?? null;
 	const latestTurnSettled = isLatestTurnSettled(
@@ -1159,21 +1160,25 @@ export default function ChatView({ threadId }: ChatViewProps) {
 			},
 		});
 	}, [diffOpen, navigate, threadId]);
-	const onToggleProjectDock = useCallback(() => {
+	const canOpenRightDock = isGitRepo || Boolean(activeProject);
+	const onToggleRightDock = useCallback(() => {
 		void navigate({
 			to: "/$threadId",
 			params: { threadId },
 			replace: true,
 			search: (previous) => {
 				const rest = stripSettingsTabSearchParams(
-					stripDiffSearchParams(stripProjectDockSearchParams(previous)),
+					stripProjectDockSearchParams(stripDiffSearchParams(previous)),
 				);
-				return projectDockOpen
-					? rest
-					: { ...rest, projectDock: "1", projectDockTab: "git" };
+				if (rightDockOpen) {
+					return rest;
+				}
+				return activeProject
+					? { ...rest, projectDock: "1", projectDockTab: "git" }
+					: { ...rest, diff: "1" };
 			},
 		});
-	}, [navigate, projectDockOpen, threadId]);
+	}, [navigate, rightDockOpen, threadId, activeProject]);
 
 	const envLocked = Boolean(
 		activeThread &&
@@ -3120,15 +3125,14 @@ export default function ChatView({ threadId }: ChatViewProps) {
 				availableEditors={availableEditors}
 				diffToggleShortcutLabel={diffPanelShortcutLabel}
 				gitCwd={gitCwd}
-				diffOpen={diffOpen}
-				projectDockOpen={projectDockOpen}
+				rightDockOpen={rightDockOpen}
+				canOpenRightDock={canOpenRightDock}
 				onRunProjectScript={(script) => {
 					void runProjectScript(script);
 				}}
 				onAddProjectScript={saveProjectScript}
 				onUpdateProjectScript={updateProjectScript}
-				onToggleDiff={onToggleDiff}
-				onToggleProjectDock={onToggleProjectDock}
+				onToggleRightDock={onToggleRightDock}
 				isDesktopShell={isDesktopShell}
 				providerStatus={activeProviderStatus}
 				threadError={activeThread.error}

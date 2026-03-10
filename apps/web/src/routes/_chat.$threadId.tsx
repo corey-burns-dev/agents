@@ -1,5 +1,6 @@
 import { ThreadId } from "@agents/contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { DiffIcon, FolderTreeIcon, PanelRightCloseIcon } from "lucide-react";
 import {
 	type CSSProperties,
 	lazy,
@@ -15,13 +16,20 @@ import {
 	SidebarRail,
 } from "~/components/ui/sidebar";
 import ChatView from "../components/ChatView";
+import { Button } from "../components/ui/button";
 import { Sheet, SheetPopup } from "../components/ui/sheet";
+import {
+	Tooltip,
+	TooltipPopup,
+	TooltipTrigger,
+} from "../components/ui/tooltip";
 import { useComposerDraftStore } from "../composerDraftStore";
 import {
 	parseDiffRouteSearch,
 	stripDiffSearchParams,
 } from "../diffRouteSearch";
 import { useMediaQuery } from "../hooks/useMediaQuery";
+import { cn } from "../lib/utils";
 import {
 	parseProjectDockRouteSearch,
 	stripProjectDockSearchParams,
@@ -31,40 +39,9 @@ import { useStore } from "../store";
 const DiffPanel = lazy(() => import("../components/DiffPanel"));
 const ProjectDock = lazy(() => import("../components/ProjectDock"));
 const DIFF_INLINE_LAYOUT_MEDIA_QUERY = "(max-width: 1180px)";
-const DIFF_INLINE_SIDEBAR_WIDTH_STORAGE_KEY = "chat_diff_sidebar_width";
-const DIFF_INLINE_DEFAULT_WIDTH = "clamp(28rem,48vw,44rem)";
-const DIFF_INLINE_SIDEBAR_MIN_WIDTH = 26 * 16;
-const PROJECT_DOCK_INLINE_LAYOUT_MEDIA_QUERY = "(max-width: 1180px)";
-const PROJECT_DOCK_INLINE_SIDEBAR_WIDTH_STORAGE_KEY =
-	"chat_project_dock_sidebar_width";
-const PROJECT_DOCK_INLINE_DEFAULT_WIDTH = "clamp(22rem,32vw,26rem)";
-const PROJECT_DOCK_INLINE_SIDEBAR_MIN_WIDTH = 20 * 16;
-
-const DiffPanelSheet = (props: {
-	children: ReactNode;
-	diffOpen: boolean;
-	onCloseDiff: () => void;
-}) => {
-	return (
-		<Sheet
-			open={props.diffOpen}
-			onOpenChange={(open) => {
-				if (!open) {
-					props.onCloseDiff();
-				}
-			}}
-		>
-			<SheetPopup
-				side="right"
-				showCloseButton={false}
-				keepMounted
-				className="w-[min(88vw,820px)] max-w-[820px] p-0"
-			>
-				{props.children}
-			</SheetPopup>
-		</Sheet>
-	);
-};
+const RIGHT_DOCK_WIDTH_STORAGE_KEY = "chat_right_dock_width";
+const RIGHT_DOCK_DEFAULT_WIDTH = "clamp(28rem,48vw,44rem)";
+const RIGHT_DOCK_MIN_WIDTH = 26 * 16;
 
 const DiffLoadingFallback = (props: { inline: boolean }) => {
 	if (props.inline) {
@@ -98,21 +75,39 @@ const ProjectDockLoadingFallback = (props: { inline: boolean }) => {
 	);
 };
 
-const DiffPanelInlineSidebar = (props: {
-	diffOpen: boolean;
-	onCloseDiff: () => void;
-	onOpenDiff: () => void;
+type RightDockPane = "diff" | "project";
+
+const RightDockInlineSidebar = (props: {
+	open: boolean;
+	pane: RightDockPane;
+	onClose: () => void;
+	onOpen: () => void;
+	onSwitchToDiff: () => void;
+	onSwitchToProject: () => void;
+	canShowDiff: boolean;
+	canShowProject: boolean;
+	projectDockContent: ReactNode;
 }) => {
-	const { diffOpen, onCloseDiff, onOpenDiff } = props;
+	const {
+		open,
+		pane,
+		onClose,
+		onOpen,
+		onSwitchToDiff,
+		onSwitchToProject,
+		canShowDiff,
+		canShowProject,
+		projectDockContent,
+	} = props;
 	const onOpenChange = useCallback(
-		(open: boolean) => {
-			if (open) {
-				onOpenDiff();
+		(nextOpen: boolean) => {
+			if (nextOpen) {
+				onOpen();
 				return;
 			}
-			onCloseDiff();
+			onClose();
 		},
-		[onCloseDiff, onOpenDiff],
+		[onClose, onOpen],
 	);
 	const shouldAcceptInlineSidebarWidth = useCallback(
 		({ nextWidth, wrapper }: { nextWidth: number; wrapper: HTMLElement }) => {
@@ -156,92 +151,186 @@ const DiffPanelInlineSidebar = (props: {
 	return (
 		<SidebarProvider
 			defaultOpen={false}
-			open={diffOpen}
+			open={open}
 			onOpenChange={onOpenChange}
 			className="w-auto min-h-0 flex-none bg-transparent"
-			style={{ "--sidebar-width": DIFF_INLINE_DEFAULT_WIDTH } as CSSProperties}
+			style={{ "--sidebar-width": RIGHT_DOCK_DEFAULT_WIDTH } as CSSProperties}
 		>
 			<Sidebar
 				side="right"
 				collapsible="offcanvas"
 				className="border-l border-border bg-card text-foreground"
 				resizable={{
-					minWidth: DIFF_INLINE_SIDEBAR_MIN_WIDTH,
+					minWidth: RIGHT_DOCK_MIN_WIDTH,
 					shouldAcceptWidth: shouldAcceptInlineSidebarWidth,
-					storageKey: DIFF_INLINE_SIDEBAR_WIDTH_STORAGE_KEY,
+					storageKey: RIGHT_DOCK_WIDTH_STORAGE_KEY,
 				}}
 			>
-				<Suspense fallback={<DiffLoadingFallback inline />}>
-					<DiffPanel mode="sidebar" />
-				</Suspense>
+				<div className="flex h-full min-h-0 flex-col">
+					<div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/60 bg-muted/30 px-3 py-2">
+						<div className="flex items-center gap-1">
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											size="sm"
+											variant={pane === "diff" ? "secondary" : "ghost"}
+											className={cn(
+												"h-8 gap-2 px-3",
+												pane === "diff" && "bg-background shadow-sm",
+											)}
+											onClick={onSwitchToDiff}
+											disabled={!canShowDiff}
+											aria-label="Diff view"
+										>
+											<DiffIcon className="size-4" />
+											<span className="text-xs font-medium">Diff</span>
+										</Button>
+									}
+								/>
+								<TooltipPopup side="bottom">
+									{canShowDiff
+										? "Diff view"
+										: "Diff is unavailable (not a git repo)."}
+								</TooltipPopup>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											size="sm"
+											variant={pane === "project" ? "secondary" : "ghost"}
+											className={cn(
+												"h-8 gap-2 px-3",
+												pane === "project" && "bg-background shadow-sm",
+											)}
+											onClick={onSwitchToProject}
+											disabled={!canShowProject}
+											aria-label="Project dock"
+										>
+											<FolderTreeIcon className="size-4" />
+											<span className="text-xs font-medium">Project</span>
+										</Button>
+									}
+								/>
+								<TooltipPopup side="bottom">
+									{canShowProject
+										? "Project dock"
+										: "Project dock is unavailable (no project)."}
+								</TooltipPopup>
+							</Tooltip>
+						</div>
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<Button
+										size="icon-xs"
+										variant="ghost"
+										className="size-8 text-muted-foreground hover:text-foreground"
+										onClick={onClose}
+										aria-label="Close panel"
+									>
+										<PanelRightCloseIcon className="size-4" />
+									</Button>
+								}
+							/>
+							<TooltipPopup side="bottom">Close panel</TooltipPopup>
+						</Tooltip>
+					</div>
+					<div className="min-w-0 flex-1 overflow-hidden">
+						{pane === "diff" ? (
+							<Suspense fallback={<DiffLoadingFallback inline />}>
+								<DiffPanel mode="sidebar" />
+							</Suspense>
+						) : (
+							projectDockContent
+						)}
+					</div>
+				</div>
 				<SidebarRail />
 			</Sidebar>
 		</SidebarProvider>
 	);
 };
 
-const ProjectDockSheet = (props: {
-	children: ReactNode;
+const RightDockSheet = (props: {
 	open: boolean;
-	onOpenChange: (open: boolean) => void;
+	pane: RightDockPane;
+	onClose: () => void;
+	onSwitchToDiff: () => void;
+	onSwitchToProject: () => void;
+	canShowDiff: boolean;
+	canShowProject: boolean;
+	diffContent: ReactNode;
+	projectDockContent: ReactNode;
 }) => {
+	const {
+		open,
+		pane,
+		onClose,
+		onSwitchToDiff,
+		onSwitchToProject,
+		canShowDiff,
+		canShowProject,
+		diffContent,
+		projectDockContent,
+	} = props;
 	return (
-		<Sheet open={props.open} onOpenChange={props.onOpenChange}>
+		<Sheet
+			open={open}
+			onOpenChange={(nextOpen) => {
+				if (!nextOpen) onClose();
+			}}
+		>
 			<SheetPopup
 				side="right"
 				showCloseButton={false}
 				keepMounted
-				className="w-[min(92vw,420px)] max-w-[420px] p-0"
+				className="flex w-[min(92vw,820px)] max-w-[820px] flex-col p-0"
 			>
-				{props.children}
+				<div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
+					<div className="flex items-center gap-1">
+						<Button
+							size="sm"
+							variant={pane === "diff" ? "secondary" : "ghost"}
+							className={cn(
+								"gap-2",
+								pane === "diff" && "bg-background shadow-sm",
+							)}
+							onClick={onSwitchToDiff}
+							disabled={!canShowDiff}
+						>
+							<DiffIcon className="size-4" />
+							Diff
+						</Button>
+						<Button
+							size="sm"
+							variant={pane === "project" ? "secondary" : "ghost"}
+							className={cn(
+								"gap-2",
+								pane === "project" && "bg-background shadow-sm",
+							)}
+							onClick={onSwitchToProject}
+							disabled={!canShowProject}
+						>
+							<FolderTreeIcon className="size-4" />
+							Project
+						</Button>
+					</div>
+					<Button
+						size="icon-xs"
+						variant="ghost"
+						onClick={onClose}
+						aria-label="Close panel"
+					>
+						<PanelRightCloseIcon className="size-4" />
+					</Button>
+				</div>
+				<div className="min-h-0 flex-1 overflow-auto">
+					{pane === "diff" ? diffContent : projectDockContent}
+				</div>
 			</SheetPopup>
 		</Sheet>
-	);
-};
-
-const ProjectDockInlineSidebar = (props: {
-	children: ReactNode;
-	open: boolean;
-	onClose: () => void;
-	onOpen: () => void;
-}) => {
-	const { children, onClose, onOpen, open } = props;
-	const onOpenChange = useCallback(
-		(nextOpen: boolean) => {
-			if (nextOpen) {
-				onOpen();
-				return;
-			}
-			onClose();
-		},
-		[onClose, onOpen],
-	);
-
-	return (
-		<SidebarProvider
-			defaultOpen={false}
-			open={open}
-			onOpenChange={onOpenChange}
-			className="w-auto min-h-0 flex-none bg-transparent"
-			style={
-				{
-					"--sidebar-width": PROJECT_DOCK_INLINE_DEFAULT_WIDTH,
-				} as CSSProperties
-			}
-		>
-			<Sidebar
-				side="right"
-				collapsible="offcanvas"
-				className="border-l border-border bg-card text-foreground"
-				resizable={{
-					minWidth: PROJECT_DOCK_INLINE_SIDEBAR_MIN_WIDTH,
-					storageKey: PROJECT_DOCK_INLINE_SIDEBAR_WIDTH_STORAGE_KEY,
-				}}
-			>
-				{children}
-				<SidebarRail />
-			</Sidebar>
-		</SidebarProvider>
 	);
 };
 
@@ -261,50 +350,65 @@ function ChatThreadRouteView() {
 	const routeThreadExists = threadExists || draftThreadExists;
 	const diffOpen = search.diff === "1";
 	const projectDockOpen = search.projectDock === "1" && !diffOpen;
-	const shouldUseDiffSheet = useMediaQuery(DIFF_INLINE_LAYOUT_MEDIA_QUERY);
-	const shouldUseProjectDockSheet = useMediaQuery(
-		PROJECT_DOCK_INLINE_LAYOUT_MEDIA_QUERY,
-	);
-	const closeDiff = useCallback(() => {
-		void navigate({
-			to: "/$threadId",
-			params: { threadId },
-			search: (previous) => {
-				return stripDiffSearchParams(previous);
-			},
-		});
-	}, [navigate, threadId]);
-	const openDiff = useCallback(() => {
+	const rightDockOpen = diffOpen || projectDockOpen;
+	const rightDockPane: RightDockPane = diffOpen ? "diff" : "project";
+	const shouldUseRightDockSheet = useMediaQuery(DIFF_INLINE_LAYOUT_MEDIA_QUERY);
+
+	const closeRightDock = useCallback(() => {
 		void navigate({
 			to: "/$threadId",
 			params: { threadId },
 			search: (previous) => {
 				const rest = stripProjectDockSearchParams(
 					stripDiffSearchParams(previous),
-				);
-				return { ...rest, diff: "1" };
+				) as Record<string, unknown>;
+				return rest as typeof previous;
 			},
 		});
 	}, [navigate, threadId]);
-	const closeProjectDock = useCallback(() => {
-		void navigate({
-			to: "/$threadId",
-			params: { threadId },
-			search: (previous) => stripProjectDockSearchParams(previous),
-		});
-	}, [navigate, threadId]);
-	const openProjectDock = useCallback(() => {
-		void navigate({
-			to: "/$threadId",
-			params: { threadId },
-			search: (previous) => {
-				const rest = stripDiffSearchParams(
-					stripProjectDockSearchParams(previous),
-				);
-				return { ...rest, projectDock: "1", projectDockTab: "git" };
-			},
-		});
-	}, [navigate, threadId]);
+
+	const openRightDockWithPane = useCallback(
+		(pane: RightDockPane) => {
+			void navigate({
+				to: "/$threadId",
+				params: { threadId },
+				search: (previous) => {
+					const rest = stripProjectDockSearchParams(
+						stripDiffSearchParams(previous),
+					);
+					if (pane === "diff") {
+						return { ...rest, diff: "1" };
+					}
+					return { ...rest, projectDock: "1", projectDockTab: "git" };
+				},
+			});
+		},
+		[navigate, threadId],
+	);
+
+	const threads = useStore((store) => store.threads);
+	const projects = useStore((store) => store.projects);
+	const draftThread = useComposerDraftStore(
+		(store) => store.draftThreadsByThreadId[threadId] ?? null,
+	);
+	const activeThread = threads.find((thread) => thread.id === threadId);
+	const activeProjectId =
+		activeThread?.projectId ?? draftThread?.projectId ?? null;
+	const activeProject = projects.find(
+		(project) => project.id === activeProjectId,
+	);
+	const canShowProject = Boolean(activeProject);
+	const canShowDiff = true;
+
+	const openRightDock = useCallback(() => {
+		openRightDockWithPane(canShowProject ? "project" : "diff");
+	}, [openRightDockWithPane, canShowProject]);
+
+	const projectDockContentNode = (
+		<Suspense fallback={<ProjectDockLoadingFallback inline />}>
+			<ProjectDockRouteSlot onClose={closeRightDock} />
+		</Suspense>
+	);
 
 	useEffect(() => {
 		if (!threadsHydrated) {
@@ -321,28 +425,23 @@ function ChatThreadRouteView() {
 		return null;
 	}
 
-	if (!shouldUseDiffSheet) {
+	if (!shouldUseRightDockSheet) {
 		return (
 			<>
 				<SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none bg-background text-foreground">
 					<ChatView key={threadId} threadId={threadId} />
 				</SidebarInset>
-				<DiffPanelInlineSidebar
-					diffOpen={diffOpen}
-					onCloseDiff={closeDiff}
-					onOpenDiff={openDiff}
+				<RightDockInlineSidebar
+					open={rightDockOpen}
+					pane={rightDockPane}
+					onClose={closeRightDock}
+					onOpen={openRightDock}
+					onSwitchToDiff={() => openRightDockWithPane("diff")}
+					onSwitchToProject={() => openRightDockWithPane("project")}
+					canShowDiff={canShowDiff}
+					canShowProject={canShowProject}
+					projectDockContent={projectDockContentNode}
 				/>
-				<ProjectDockInlineSidebar
-					open={projectDockOpen && !shouldUseProjectDockSheet}
-					onClose={closeProjectDock}
-					onOpen={openProjectDock}
-				>
-					{projectDockOpen ? (
-						<Suspense fallback={<ProjectDockLoadingFallback inline />}>
-							<ProjectDockRouteSlot onClose={closeProjectDock} />
-						</Suspense>
-					) : null}
-				</ProjectDockInlineSidebar>
 			</>
 		);
 	}
@@ -352,27 +451,25 @@ function ChatThreadRouteView() {
 			<SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none bg-background text-foreground">
 				<ChatView key={threadId} threadId={threadId} />
 			</SidebarInset>
-			<DiffPanelSheet diffOpen={diffOpen} onCloseDiff={closeDiff}>
-				<Suspense fallback={<DiffLoadingFallback inline={false} />}>
-					<DiffPanel mode="sheet" />
-				</Suspense>
-			</DiffPanelSheet>
-			<ProjectDockSheet
-				open={projectDockOpen && shouldUseProjectDockSheet}
-				onOpenChange={(open) => {
-					if (open) {
-						openProjectDock();
-						return;
-					}
-					closeProjectDock();
-				}}
-			>
-				{projectDockOpen ? (
-					<Suspense fallback={<ProjectDockLoadingFallback inline={false} />}>
-						<ProjectDockRouteSlot onClose={closeProjectDock} />
+			<RightDockSheet
+				open={rightDockOpen}
+				pane={rightDockPane}
+				onClose={closeRightDock}
+				onSwitchToDiff={() => openRightDockWithPane("diff")}
+				onSwitchToProject={() => openRightDockWithPane("project")}
+				canShowDiff={canShowDiff}
+				canShowProject={canShowProject}
+				diffContent={
+					<Suspense fallback={<DiffLoadingFallback inline={false} />}>
+						<DiffPanel mode="sheet" />
 					</Suspense>
-				) : null}
-			</ProjectDockSheet>
+				}
+				projectDockContent={
+					<Suspense fallback={<ProjectDockLoadingFallback inline={false} />}>
+						<ProjectDockRouteSlot onClose={closeRightDock} />
+					</Suspense>
+				}
+			/>
 		</>
 	);
 }

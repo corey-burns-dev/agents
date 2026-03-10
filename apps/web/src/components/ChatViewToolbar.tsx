@@ -9,9 +9,8 @@ import { EDITORS } from "@agents/contracts";
 import {
 	ChevronDownIcon,
 	CircleAlertIcon,
-	DiffIcon,
 	FolderClosedIcon,
-	FolderTreeIcon,
+	PanelRightOpenIcon,
 } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -62,16 +61,15 @@ interface ChatHeaderProps {
 	availableEditors: ReadonlyArray<EditorId>;
 	diffToggleShortcutLabel: string | null;
 	gitCwd: string | null;
-	diffOpen: boolean;
-	projectDockOpen: boolean;
+	rightDockOpen: boolean;
+	canOpenRightDock: boolean;
 	onRunProjectScript: (script: ProjectScript) => void;
 	onAddProjectScript: (input: NewProjectScriptInput) => Promise<void>;
 	onUpdateProjectScript: (
 		scriptId: string,
 		input: NewProjectScriptInput,
 	) => Promise<void>;
-	onToggleDiff: () => void;
-	onToggleProjectDock: () => void;
+	onToggleRightDock: () => void;
 }
 
 const ChatHeader = memo(function ChatHeader({
@@ -86,13 +84,12 @@ const ChatHeader = memo(function ChatHeader({
 	availableEditors,
 	diffToggleShortcutLabel,
 	gitCwd,
-	diffOpen,
-	projectDockOpen,
+	rightDockOpen,
+	canOpenRightDock,
 	onRunProjectScript,
 	onAddProjectScript,
 	onUpdateProjectScript,
-	onToggleDiff,
-	onToggleProjectDock,
+	onToggleRightDock,
 }: ChatHeaderProps) {
 	return (
 		<div className="flex min-w-0 flex-1 items-center gap-2">
@@ -141,45 +138,23 @@ const ChatHeader = memo(function ChatHeader({
 						render={
 							<Toggle
 								className="shrink-0"
-								pressed={projectDockOpen}
-								onPressedChange={onToggleProjectDock}
-								aria-label="Toggle project dock"
+								pressed={rightDockOpen}
+								onPressedChange={onToggleRightDock}
+								aria-label="Toggle right panel"
 								variant="outline"
 								size="xs"
-								disabled={!activeProjectName}
+								disabled={!canOpenRightDock}
 							>
-								<FolderTreeIcon className="size-3" />
+								<PanelRightOpenIcon className="size-3" />
 							</Toggle>
 						}
 					/>
 					<TooltipPopup side="bottom">
-						{activeProjectName
-							? "Toggle project dock"
-							: "Project dock is unavailable because no project is active."}
-					</TooltipPopup>
-				</Tooltip>
-				<Tooltip>
-					<TooltipTrigger
-						render={
-							<Toggle
-								className="shrink-0"
-								pressed={diffOpen}
-								onPressedChange={onToggleDiff}
-								aria-label="Toggle diff panel"
-								variant="outline"
-								size="xs"
-								disabled={!isGitRepo}
-							>
-								<DiffIcon className="size-3" />
-							</Toggle>
-						}
-					/>
-					<TooltipPopup side="bottom">
-						{!isGitRepo
-							? "Diff panel is unavailable because this project is not a git repository."
-							: diffToggleShortcutLabel
-								? `Toggle diff panel (${diffToggleShortcutLabel})`
-								: "Toggle diff panel"}
+						{canOpenRightDock
+							? diffToggleShortcutLabel
+								? `Toggle right panel (${diffToggleShortcutLabel})`
+								: "Toggle right panel (Diff & Project dock)"
+							: "Right panel is unavailable (no project or git repo)."}
 					</TooltipPopup>
 				</Tooltip>
 			</div>
@@ -399,13 +374,12 @@ export function Toolbar(props: ToolbarProps) {
 					availableEditors={props.availableEditors}
 					diffToggleShortcutLabel={props.diffToggleShortcutLabel}
 					gitCwd={props.gitCwd}
-					diffOpen={props.diffOpen}
-					projectDockOpen={props.projectDockOpen}
+					rightDockOpen={props.rightDockOpen}
+					canOpenRightDock={props.canOpenRightDock}
 					onRunProjectScript={props.onRunProjectScript}
 					onAddProjectScript={props.onAddProjectScript}
 					onUpdateProjectScript={props.onUpdateProjectScript}
-					onToggleDiff={props.onToggleDiff}
-					onToggleProjectDock={props.onToggleProjectDock}
+					onToggleRightDock={props.onToggleRightDock}
 				/>
 			</header>
 			<ProviderHealthBanner status={props.providerStatus} />

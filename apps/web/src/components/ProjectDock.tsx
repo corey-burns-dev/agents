@@ -686,26 +686,6 @@ const ProjectDock = memo(function ProjectDock({
 
 	return (
 		<div className="flex h-full w-full shrink-0 flex-col border-l border-border/70 bg-card/60 text-foreground backdrop-blur-sm">
-			<div className="flex shrink-0 items-start justify-between gap-3 border-b border-border/60 px-3 py-3">
-				<div className="min-w-0">
-					<p className="truncate font-medium text-sm">
-						{project?.name ?? "Project"}
-					</p>
-					<p className="text-[11px] text-muted-foreground">Project dock</p>
-				</div>
-				<div className="flex items-center gap-1">
-					<Button
-						size="icon-xs"
-						variant="ghost"
-						onClick={onClose}
-						aria-label="Close project dock"
-						className="text-muted-foreground/60 hover:text-foreground/80"
-					>
-						<PanelRightCloseIcon className="size-3.5" />
-					</Button>
-				</div>
-			</div>
-
 			<div className="flex items-center gap-1 border-b border-border/60 px-3 py-2">
 				<button
 					type="button"

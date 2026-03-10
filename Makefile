@@ -24,6 +24,9 @@ help:
 	@echo "  make dist-desktop-linux  - Build desktop artifact for Linux"
 	@echo "  make dist-desktop-win    - Build desktop artifact for Windows"
 	@echo "  make sync-icons          - Sync VSCode icons"
+	@echo "  make docker-build       - Build the Docker image"
+	@echo "  make docker-up          - Start the application with Docker Compose"
+	@echo "  make docker-down        - Stop the application"
 
 install:
 	bun install
@@ -87,3 +90,12 @@ dist-desktop-win:
 
 sync-icons:
 	bun run sync:vscode-icons
+
+docker-build:
+	docker build -t agents .
+
+docker-up:
+	docker compose up -d
+
+docker-down:
+	docker compose down
