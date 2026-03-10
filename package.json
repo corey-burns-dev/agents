@@ -48,6 +48,8 @@
     "build:desktop:no-bundle": "bun run build:contracts && bun run --cwd apps/web build && bun run --cwd apps/server build && bun run --cwd apps/desktop/tauri build:no-bundle",
     "dist:desktop:win": "bun scripts/build-desktop-artifact.ts --platform win --target nsis --arch x64",
     "clean": "rm -rf node_modules apps/*/node_modules apps/desktop/node_modules apps/desktop/*/node_modules packages/*/node_modules apps/*/dist packages/*/dist apps/desktop/tauri/src-tauri/target apps/desktop/qt6/build",
+    "update": "bun scripts/update-deps.ts",
+    "update:check": "bun scripts/update-deps.ts --check",
     "sync:vscode-icons": "bun scripts/sync-vscode-icons.mjs",
     "prepare": "simple-git-hooks"
   },
