@@ -869,7 +869,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
 					>
 						<div
 							className={cn(
-								"rounded-md border px-2 py-[3px] text-left transition-colors",
+								"rounded-md border px-2 py-0.75 text-left transition-colors",
 								selectedTurnId === null
 									? "border-border bg-accent text-accent-foreground"
 									: "border-border/70 bg-background/70 text-muted-foreground/80 hover:border-border hover:text-foreground/80",
@@ -892,7 +892,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
 						>
 							<div
 								className={cn(
-									"rounded-md border px-2 py-[3px] text-left transition-colors",
+									"rounded-md border px-2 py-0.75 text-left transition-colors",
 									summary.turnId === selectedTurn?.turnId
 										? "border-border bg-accent text-accent-foreground"
 										: "border-border/70 bg-background/70 text-muted-foreground/80 hover:border-border hover:text-foreground/80",

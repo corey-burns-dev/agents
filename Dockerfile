@@ -37,10 +37,8 @@ RUN bun run --cwd apps/web build
 # Build server
 RUN bun run --cwd apps/server build
 
-# Prune node_modules to keep only production dependencies
-# This is tricky in Bun as there is no direct equivalent of `npm prune --production`
-# that works exactly the same in all cases, but we can re-install.
-# Actually, the bundle includes most of our code, so runtime deps are minimal.
+# Prune to production dependencies only to reduce runtime image size
+RUN bun install --production
 
 # Stage 2: Runtime Image
 FROM oven/bun:1.3.9-slim AS runtime

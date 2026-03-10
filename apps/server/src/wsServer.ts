@@ -425,6 +425,11 @@ export const createServer = Effect.fn(function* (): Effect.fn.Return<
 			res.end(body);
 		};
 
+		if (req.url === "/health") {
+			respond(200, { "Content-Type": "application/json" }, '{"status":"ok"}');
+			return;
+		}
+
 		void Effect.runPromise(
 			Effect.gen(function* () {
 				const url = new URL(req.url ?? "/", `http://localhost:${port}`);

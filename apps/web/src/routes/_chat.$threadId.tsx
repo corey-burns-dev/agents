@@ -53,7 +53,7 @@ const DiffLoadingFallback = (props: { inline: boolean }) => {
 	}
 
 	return (
-		<aside className="flex h-full w-[560px] shrink-0 items-center justify-center border-l border-border bg-card px-4 text-center text-xs text-muted-foreground/70">
+		<aside className="flex h-full w-140 shrink-0 items-center justify-center border-l border-border bg-card px-4 text-center text-xs text-muted-foreground/70">
 			Loading diff viewer...
 		</aside>
 	);
@@ -69,7 +69,7 @@ const ProjectDockLoadingFallback = (props: { inline: boolean }) => {
 	}
 
 	return (
-		<aside className="flex h-full w-[416px] shrink-0 items-center justify-center border-l border-border bg-card px-4 text-center text-xs text-muted-foreground/70">
+		<aside className="flex h-full w-104 shrink-0 items-center justify-center border-l border-border bg-card px-4 text-center text-xs text-muted-foreground/70">
 			Loading project dock...
 		</aside>
 	);
@@ -286,7 +286,7 @@ const RightDockSheet = (props: {
 				side="right"
 				showCloseButton={false}
 				keepMounted
-				className="flex w-[min(92vw,820px)] max-w-[820px] flex-col p-0"
+				className="flex w-[min(92vw,820px)] max-w-205 flex-col p-0"
 			>
 				<div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
 					<div className="flex items-center gap-1">

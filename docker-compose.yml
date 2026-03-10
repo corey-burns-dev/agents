@@ -16,6 +16,12 @@ services:
     volumes:
       - agents-state:/app/state
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3773/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   agents-state:
