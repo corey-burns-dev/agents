@@ -667,3 +667,16 @@ export function derivePhase(session: ThreadSession | null): SessionPhase {
 	if (session.status === "running") return "running";
 	return "ready";
 }
+
+export function isWorkingState(
+	phase: SessionPhase,
+	isSendBusy: boolean,
+	isRevertingCheckpoint: boolean,
+): boolean {
+	return (
+		phase === "running" ||
+		phase === "connecting" ||
+		isSendBusy ||
+		isRevertingCheckpoint
+	);
+}

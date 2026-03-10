@@ -103,8 +103,18 @@ export const NodePtyAdapterLive = Layer.effect(
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 		const path = yield* Path.Path;
+		let nodePtyModule: typeof import("node-pty") | null = null;
 
-		const nodePty = yield* Effect.promise(() => import("node-pty"));
+		const loadNodePty = () =>
+			nodePtyModule
+				? Effect.succeed(nodePtyModule)
+				: Effect.promise(() => import("node-pty")).pipe(
+						Effect.tap((loaded) =>
+							Effect.sync(() => {
+								nodePtyModule = loaded;
+							}),
+						),
+					);
 
 		const ensureNodePtySpawnHelperExecutableCached = yield* Effect.cached(
 			ensureNodePtySpawnHelperExecutable().pipe(
@@ -117,6 +127,7 @@ export const NodePtyAdapterLive = Layer.effect(
 		return {
 			spawn: Effect.fn(function* (input) {
 				yield* ensureNodePtySpawnHelperExecutableCached;
+				const nodePty = yield* loadNodePty();
 				const ptyProcess = nodePty.spawn(input.shell, input.args ?? [], {
 					cwd: input.cwd,
 					cols: input.cols,

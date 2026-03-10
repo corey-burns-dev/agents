@@ -16,6 +16,7 @@ import {
 	findLatestProposedPlan,
 	hasToolActivityForTurn,
 	isLatestTurnSettled,
+	isWorkingState,
 	PROVIDER_OPTIONS,
 } from "./session-logic";
 
@@ -140,6 +141,19 @@ describe("derivePendingApprovals", () => {
 		];
 
 		expect(derivePendingApprovals(activities)).toEqual([]);
+	});
+});
+
+describe("isWorkingState", () => {
+	it("treats connecting and send setup as active work", () => {
+		expect(isWorkingState("connecting", false, false)).toBe(true);
+		expect(isWorkingState("ready", true, false)).toBe(true);
+		expect(isWorkingState("ready", false, true)).toBe(true);
+	});
+
+	it("returns false once the thread is idle", () => {
+		expect(isWorkingState("ready", false, false)).toBe(false);
+		expect(isWorkingState("disconnected", false, false)).toBe(false);
 	});
 });
 

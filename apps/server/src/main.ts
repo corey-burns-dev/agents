@@ -102,62 +102,44 @@ export class CliConfig extends ServiceMap.Service<CliConfig, CliConfigShape>()(
 	);
 }
 
-/** Prefer AGENTS_* env, fall back to legacy AGENTS_* for compatibility. */
-const stringWithLegacy = (primary: string, legacy: string) =>
-	Config.all({
-		a: Config.string(primary).pipe(Config.option),
-		b: Config.string(legacy).pipe(Config.option),
-	}).pipe(
-		Config.map(
-			({ a, b }) => Option.getOrUndefined(a) ?? Option.getOrUndefined(b),
-		),
+const stringFromEnv = (name: string) =>
+	Config.string(name).pipe(
+		Config.option,
+		Config.map((value) => Option.getOrUndefined(value)),
 	);
-const portWithLegacy = (primary: string, legacy: string) =>
-	Config.all({
-		a: Config.port(primary).pipe(Config.option),
-		b: Config.port(legacy).pipe(Config.option),
-	}).pipe(
-		Config.map(
-			({ a, b }) => Option.getOrUndefined(a) ?? Option.getOrUndefined(b),
-		),
+
+const portFromEnv = (name: string) =>
+	Config.port(name).pipe(
+		Config.option,
+		Config.map((value) => Option.getOrUndefined(value)),
 	);
-const booleanWithLegacy = (primary: string, legacy: string) =>
-	Config.all({
-		a: Config.boolean(primary).pipe(Config.option),
-		b: Config.boolean(legacy).pipe(Config.option),
-	}).pipe(
-		Config.map(
-			({ a, b }) => Option.getOrUndefined(a) ?? Option.getOrUndefined(b),
-		),
+
+const booleanFromEnv = (name: string) =>
+	Config.boolean(name).pipe(
+		Config.option,
+		Config.map((value) => Option.getOrUndefined(value)),
 	);
-const urlWithLegacy = (primary: string, legacy: string) =>
-	Config.all({
-		a: Config.url(primary).pipe(Config.option),
-		b: Config.url(legacy).pipe(Config.option),
-	}).pipe(
-		Config.map(
-			({ a, b }) => Option.getOrUndefined(a) ?? Option.getOrUndefined(b),
-		),
+
+const urlFromEnv = (name: string) =>
+	Config.url(name).pipe(
+		Config.option,
+		Config.map((value) => Option.getOrUndefined(value)),
 	);
 
 const CliEnvConfig = Config.all({
-	mode: stringWithLegacy("AGENTS_MODE", "AGENTS_MODE").pipe(
+	mode: stringFromEnv("AGENTS_MODE").pipe(
 		Config.map((value) => (value === "desktop" ? "desktop" : "web")),
 	),
-	port: portWithLegacy("AGENTS_PORT", "AGENTS_PORT"),
-	host: stringWithLegacy("AGENTS_HOST", "AGENTS_HOST"),
-	stateDir: stringWithLegacy("AGENTS_STATE_DIR", "AGENTS_STATE_DIR"),
-	devUrl: urlWithLegacy("VITE_DEV_SERVER_URL", "VITE_DEV_SERVER_URL"),
-	noBrowser: booleanWithLegacy("AGENTS_NO_BROWSER", "AGENTS_NO_BROWSER"),
-	authToken: stringWithLegacy("AGENTS_AUTH_TOKEN", "AGENTS_AUTH_TOKEN"),
-	autoBootstrapProjectFromCwd: booleanWithLegacy(
-		"AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD",
+	port: portFromEnv("AGENTS_PORT"),
+	host: stringFromEnv("AGENTS_HOST"),
+	stateDir: stringFromEnv("AGENTS_STATE_DIR"),
+	devUrl: urlFromEnv("VITE_DEV_SERVER_URL"),
+	noBrowser: booleanFromEnv("AGENTS_NO_BROWSER"),
+	authToken: stringFromEnv("AGENTS_AUTH_TOKEN"),
+	autoBootstrapProjectFromCwd: booleanFromEnv(
 		"AGENTS_AUTO_BOOTSTRAP_PROJECT_FROM_CWD",
 	),
-	logWebSocketEvents: booleanWithLegacy(
-		"AGENTS_LOG_WS_EVENTS",
-		"AGENTS_LOG_WS_EVENTS",
-	),
+	logWebSocketEvents: booleanFromEnv("AGENTS_LOG_WS_EVENTS"),
 });
 
 const resolveBooleanFlag = (flag: Option.Option<boolean>, envValue: boolean) =>

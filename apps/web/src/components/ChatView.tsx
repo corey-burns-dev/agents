@@ -127,6 +127,7 @@ import {
 	formatElapsed,
 	hasToolActivityForTurn,
 	isLatestTurnSettled,
+	isWorkingState,
 } from "../session-logic";
 import { useStore } from "../store";
 import {
@@ -678,8 +679,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
 	const isConnecting = phase === "connecting";
 	const isSendBusy = sendPhase !== "idle";
 	const isPreparingWorktree = sendPhase === "preparing-worktree";
-	const isWorking =
-		phase === "running" || isSendBusy || isConnecting || isRevertingCheckpoint;
+	const isWorking = isWorkingState(phase, isSendBusy, isRevertingCheckpoint);
 	const nowIso = new Date(nowTick).toISOString();
 	const activeWorkStartedAt = deriveActiveWorkStartedAt(
 		activeLatestTurn,
@@ -1583,14 +1583,15 @@ export default function ChatView({ threadId }: ChatViewProps) {
 			: "local";
 
 	useEffect(() => {
-		if (phase !== "running") return;
+		if (!isWorking) return;
+		setNowTick(Date.now());
 		const timer = window.setInterval(() => {
 			setNowTick(Date.now());
 		}, 1000);
 		return () => {
 			window.clearInterval(timer);
 		};
-	}, [phase]);
+	}, [isWorking]);
 
 	const beginSendPhase = useCallback(
 		(nextPhase: Exclude<SendPhase, "idle">) => {
@@ -3205,6 +3206,10 @@ export default function ChatView({ threadId }: ChatViewProps) {
 						onExpandImage={setExpandedImage}
 						nonPersistedComposerImageIdSet={nonPersistedComposerImageIdSet}
 						removeComposerImage={removeComposerImage}
+						onAttachImages={addComposerImages}
+						canAttachImages={
+							selectedProvider === "codex" || selectedProvider === "gemini"
+						}
 						composerEditorRef={composerEditorRef}
 						composerValue={
 							isComposerApprovalState

@@ -293,6 +293,7 @@ describe("ProviderCommandReactor", () => {
 			stopSession,
 			renameBranch,
 			generateBranchName,
+			runtimeSessions,
 			stateDir,
 		};
 	}
@@ -335,6 +336,70 @@ describe("ProviderCommandReactor", () => {
 		);
 		expect(thread?.session?.threadId).toBe("thread-1");
 		expect(thread?.session?.runtimeMode).toBe("approval-required");
+	});
+
+	it("waits for a connecting session to become ready before sending a turn", async () => {
+		const harness = await createHarness();
+		const now = new Date().toISOString();
+		harness.startSession.mockImplementationOnce((_: unknown, input: unknown) =>
+			Effect.sync(() => {
+				const session: ProviderSession = {
+					provider: "codex",
+					status: "connecting",
+					runtimeMode:
+						typeof input === "object" &&
+						input !== null &&
+						"runtimeMode" in input &&
+						(input.runtimeMode === "approval-required" ||
+							input.runtimeMode === "full-access")
+							? input.runtimeMode
+							: "full-access",
+					threadId:
+						typeof input === "object" &&
+						input !== null &&
+						"threadId" in input &&
+						typeof input.threadId === "string"
+							? ThreadId.makeUnsafe(input.threadId)
+							: ThreadId.makeUnsafe("thread-1"),
+					resumeCursor: { opaque: "connecting-cursor" },
+					createdAt: now,
+					updatedAt: now,
+				};
+				harness.runtimeSessions.push(session);
+				setTimeout(() => {
+					harness.runtimeSessions[0] = {
+						...session,
+						status: "ready",
+						updatedAt: new Date().toISOString(),
+					};
+				}, 50);
+				return session;
+			}),
+		);
+
+		await Effect.runPromise(
+			harness.engine.dispatch({
+				type: "thread.turn.start",
+				commandId: CommandId.makeUnsafe("cmd-turn-start-connecting"),
+				threadId: ThreadId.makeUnsafe("thread-1"),
+				message: {
+					messageId: asMessageId("user-message-connecting"),
+					role: "user",
+					text: "wait for ready",
+					attachments: [],
+				},
+				interactionMode: DEFAULT_PROVIDER_INTERACTION_MODE,
+				runtimeMode: "approval-required",
+				createdAt: now,
+			}),
+		);
+
+		await waitFor(() => harness.startSession.mock.calls.length === 1);
+		await waitFor(() => harness.sendTurn.mock.calls.length === 1);
+		expect(harness.sendTurn.mock.calls[0]?.[0]).toMatchObject({
+			threadId: ThreadId.makeUnsafe("thread-1"),
+			input: "wait for ready",
+		});
 	});
 
 	it("forwards codex model options through session start and turn send", async () => {

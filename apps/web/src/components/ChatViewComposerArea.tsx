@@ -21,6 +21,7 @@ import {
 	LockIcon,
 	LockOpenIcon,
 	Mic,
+	PlusIcon,
 	XIcon,
 	ZapIcon,
 } from "lucide-react";
@@ -774,6 +775,8 @@ export interface ComposerAreaProps {
 	onExpandImage: (preview: ExpandedImagePreview) => void;
 	nonPersistedComposerImageIdSet: ReadonlySet<string>;
 	removeComposerImage: (imageId: string) => void;
+	onAttachImages?: (files: File[]) => void;
+	canAttachImages: boolean;
 	composerEditorRef: RefObject<ComposerPromptEditorHandle | null>;
 	composerValue: string;
 	composerCursor: number;
@@ -862,6 +865,7 @@ export function ComposerArea(props: ComposerAreaProps) {
 			speech.start();
 		}
 	}, [speech.start, speech.status, speech.stop]);
+	const attachmentInputRef = useRef<HTMLInputElement | null>(null);
 
 	return (
 		<div
@@ -1055,6 +1059,48 @@ export function ComposerArea(props: ComposerAreaProps) {
 					) : (
 						<div className="composer-density-toolbar flex flex-wrap items-center justify-between gap-2 px-2.5 pb-2.5 sm:flex-nowrap sm:gap-0 sm:px-3 sm:pb-3">
 							<div className="chrome-density-toolbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:min-w-max sm:overflow-visible">
+								{props.canAttachImages && props.onAttachImages && (
+									<>
+										<input
+											ref={attachmentInputRef}
+											type="file"
+											accept="image/*"
+											multiple
+											className="hidden"
+											onChange={(event) => {
+												const files = event.currentTarget.files;
+												if (!files || files.length === 0) return;
+												props.onAttachImages?.(Array.from(files));
+												// Allow selecting the same file again
+												event.currentTarget.value = "";
+											}}
+										/>
+										<Tooltip>
+											<TooltipTrigger
+												render={
+													<Button
+														variant="ghost"
+														size="sm"
+														type="button"
+														className="shrink-0 px-2 text-muted-foreground/70 hover:text-foreground/80 sm:px-2.5"
+														onClick={() => attachmentInputRef.current?.click()}
+														aria-label="Attach images"
+													>
+														<PlusIcon className="size-4" />
+														<span className="sr-only sm:not-sr-only">Add</span>
+													</Button>
+												}
+											/>
+											<TooltipPopup side="top">
+												Attach images to this message
+											</TooltipPopup>
+										</Tooltip>
+										<Separator
+											orientation="vertical"
+											className="mx-0.5 hidden h-4 sm:block"
+										/>
+									</>
+								)}
 								<Tooltip>
 									<TooltipTrigger
 										render={

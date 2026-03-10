@@ -67,14 +67,17 @@ const runCli = (
 	env: Record<string, string> = { AGENTS_NO_BROWSER: "true" },
 ) => {
 	const uniqueStateDir = `/tmp/agents-cli-state-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+	const hasExplicitStateDir = "AGENTS_STATE_DIR" in env;
 	return Command.runWith(agentsCli, { version: "0.0.0-test" })(args).pipe(
 		Effect.provide(
 			ConfigProvider.layer(
 				ConfigProvider.fromEnv({
-					env: {
-						AGENTS_STATE_DIR: uniqueStateDir,
-						...env,
-					},
+					env: hasExplicitStateDir
+						? env
+						: {
+								AGENTS_STATE_DIR: uniqueStateDir,
+								...env,
+							},
 				}),
 			),
 		),
@@ -183,7 +186,7 @@ it.layer(testLayer)("server CLI command", (it) => {
 		}),
 	);
 
-	it.effect("prefers AGENTS_MODE over AGENTS_MODE when both set", () =>
+	it.effect("uses AGENTS_MODE when CLI mode flag is absent", () =>
 		Effect.gen(function* () {
 			findAvailablePort.mockImplementation((_p: number) =>
 				Effect.succeed(3773),
@@ -194,7 +197,7 @@ it.layer(testLayer)("server CLI command", (it) => {
 			});
 
 			assert.equal(start.mock.calls.length, 1);
-			assert.equal(resolvedConfig?.mode, "web");
+			assert.equal(resolvedConfig?.mode, "desktop");
 		}),
 	);
 

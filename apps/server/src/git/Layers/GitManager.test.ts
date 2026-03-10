@@ -226,7 +226,7 @@ function createGitHubCliWithFakeGh(scenario: FakeGhScenario = {}): {
 		if (args[0] === "pr" && args[1] === "create") {
 			return Effect.succeed({
 				stdout: `${
-					scenario.createdPrUrl ?? "https://github.com/burnsco/agentz/pull/101"
+					scenario.createdPrUrl ?? "https://github.com/burnsco/agents/pull/101"
 				}\n`,
 				stderr: "",
 				code: 0,
@@ -408,7 +408,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 								{
 									number: 13,
 									title: "Existing PR",
-									url: "https://github.com/burnsco/agentz/pull/13",
+									url: "https://github.com/burnsco/agents/pull/13",
 									baseRefName: "main",
 									headRefName: "feature/status-open-pr",
 								},
@@ -422,7 +422,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 				expect(status.pr).toEqual({
 					number: 13,
 					title: "Existing PR",
-					url: "https://github.com/burnsco/agentz/pull/13",
+					url: "https://github.com/burnsco/agents/pull/13",
 					baseBranch: "main",
 					headBranch: "feature/status-open-pr",
 					state: "open",
@@ -443,7 +443,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 							{
 								number: 22,
 								title: "Merged PR",
-								url: "https://github.com/burnsco/agentz/pull/22",
+								url: "https://github.com/burnsco/agents/pull/22",
 								baseRefName: "main",
 								headRefName: "feature/status-merged-pr",
 								state: "MERGED",
@@ -460,7 +460,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 			expect(status.pr).toEqual({
 				number: 22,
 				title: "Merged PR",
-				url: "https://github.com/burnsco/agentz/pull/22",
+				url: "https://github.com/burnsco/agents/pull/22",
 				baseBranch: "main",
 				headBranch: "feature/status-merged-pr",
 				state: "merged",
@@ -485,7 +485,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 							{
 								number: 45,
 								title: "Merged PR",
-								url: "https://github.com/burnsco/agentz/pull/45",
+								url: "https://github.com/burnsco/agents/pull/45",
 								baseRefName: "main",
 								headRefName: "feature/status-open-over-merged",
 								state: "MERGED",
@@ -495,7 +495,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 							{
 								number: 46,
 								title: "Open PR",
-								url: "https://github.com/burnsco/agentz/pull/46",
+								url: "https://github.com/burnsco/agents/pull/46",
 								baseRefName: "main",
 								headRefName: "feature/status-open-over-merged",
 								state: "OPEN",
@@ -511,7 +511,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 			expect(status.pr).toEqual({
 				number: 46,
 				title: "Open PR",
-				url: "https://github.com/burnsco/agentz/pull/46",
+				url: "https://github.com/burnsco/agents/pull/46",
 				baseBranch: "main",
 				headBranch: "feature/status-open-over-merged",
 				state: "open",
@@ -567,7 +567,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 					"remote",
 					"add",
 					"upstream",
-					"https://github.com/burnsco/agentz.git",
+					"https://github.com/burnsco/agents.git",
 				]);
 				yield* runGit(repoDir, ["config", "remote.pushDefault", "origin"]);
 
@@ -601,7 +601,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 					"remote",
 					"add",
 					"upstream",
-					"https://github.com/burnsco/agentz.git",
+					"https://github.com/burnsco/agents.git",
 				]);
 				yield* runGit(repoDir, ["config", "remote.pushDefault", "origin"]);
 
@@ -886,7 +886,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 								{
 									number: 77,
 									title: "Add no-upstream PR flow",
-									url: "https://github.com/burnsco/agentz/pull/77",
+									url: "https://github.com/burnsco/agents/pull/77",
 									baseRefName: "main",
 									headRefName: "feature/no-upstream-pr",
 								},
@@ -959,7 +959,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 							{
 								number: 42,
 								title: "Existing PR",
-								url: "https://github.com/burnsco/agentz/pull/42",
+								url: "https://github.com/burnsco/agents/pull/42",
 								baseRefName: "main",
 								headRefName: "feature/existing-pr",
 							},
@@ -1004,7 +1004,7 @@ it.layer(GitManagerTestLayer)("GitManager", (it) => {
 							{
 								number: 88,
 								title: "Add stacked git actions",
-								url: "https://github.com/burnsco/agentz/pull/88",
+								url: "https://github.com/burnsco/agents/pull/88",
 								baseRefName: "main",
 								headRefName: "feature-create-pr",
 							},
