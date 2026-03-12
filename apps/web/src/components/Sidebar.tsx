@@ -35,7 +35,7 @@ import { useProjectThreadArchiveActions } from "../hooks/useProjectThreadArchive
 import { isChatNewLocalShortcut, isChatNewShortcut, shortcutLabelForCommand } from "../keybindings";
 import { gitRemoveWorktreeMutationOptions, gitStatusQueryOptions } from "../lib/gitReactQuery";
 import { serverConfigQueryOptions } from "../lib/serverReactQuery";
-import { newCommandId, newProjectId, newThreadId } from "../lib/utils";
+import { cn, newCommandId, newProjectId, newThreadId } from "../lib/utils";
 import { readNativeApi } from "../nativeApi";
 import { useProjectArchiveSettings } from "../projectArchiveSettings";
 import {
@@ -281,8 +281,39 @@ function prStatusIndicator(pr: ThreadPr): PrStatusIndicator | null {
   return null;
 }
 
-function _AgentsWordmark() {
-  return <img src="/logo_detailed_transparent.png" alt="Agents" className="h-6 w-auto shrink-0" />;
+function _AgentsWordmark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={cn("h-6 w-auto shrink-0 fill-current", className)}
+      aria-label="Agents"
+    >
+      <g>
+        {/* Top Hat */}
+        <rect x="30" y="10" width="40" height="22" rx="2" />
+        <rect x="22" y="32" width="56" height="6" rx="3" />
+
+        {/* The Letter A */}
+        <path
+          d="M 28 85 L 50 40 L 72 85"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Monocle */}
+        <circle cx="41" cy="60" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" />
+        <path d="M 48 60 L 52 60" fill="none" stroke="currentColor" strokeWidth="1.5" />
+
+        {/* Bow Tie */}
+        <path d="M 40 78 L 47 81 L 40 84 Z" />
+        <path d="M 60 78 L 53 81 L 60 84 Z" />
+        <circle cx="50" cy="81" r="2.5" />
+      </g>
+    </svg>
+  );
 }
 
 export default function Sidebar() {
@@ -1354,11 +1385,7 @@ export default function Sidebar() {
     <div className="flex items-center gap-2">
       <SidebarTrigger className="shrink-0 md:hidden" />
       <div className="flex min-w-0 flex-1 items-center gap-2 mt-2 ml-1">
-        <img
-          src="/logo_detailed_transparent.png"
-          alt="Agents Logo"
-          className="h-6 w-auto shrink-0"
-        />
+        <_AgentsWordmark />
         <span className="rounded-full bg-muted/50 px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-[0.18em] text-muted-foreground/60">
           {APP_STAGE_LABEL}
         </span>
@@ -1759,11 +1786,7 @@ export default function Sidebar() {
           <div className="drag-region flex min-w-0 flex-1 items-center gap-2 pointer-events-none">
             {!isSidebarCollapsed && (
               <div className="flex min-w-0 flex-1 items-center gap-2 mt-2 ml-1">
-                <img
-                  src="/logo_detailed_transparent.png"
-                  alt="Agents Logo"
-                  className="h-6 w-auto shrink-0"
-                />
+                <_AgentsWordmark />
                 <span className="rounded-full bg-muted/50 px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-[0.18em] text-muted-foreground/60">
                   {APP_STAGE_LABEL}
                 </span>

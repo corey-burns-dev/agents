@@ -266,6 +266,38 @@ describe("tryHandleProjectFaviconRequest", () => {
     });
   });
 
+  it("prefers public/logo.png over public/logo.svg when both exist", async () => {
+    const projectDir = makeTempDir("agents-favicon-route-public-logo-png-");
+    const pngPath = path.join(projectDir, "apps", "web", "public", "logo.png");
+    const svgPath = path.join(projectDir, "apps", "web", "public", "logo.svg");
+    fs.mkdirSync(path.dirname(pngPath), { recursive: true });
+    fs.writeFileSync(pngPath, "png-logo", "utf8");
+    fs.writeFileSync(svgPath, "<svg>logo</svg>", "utf8");
+
+    await withRouteServer(async (baseUrl) => {
+      const pathname = `/api/project-favicon?cwd=${encodeURIComponent(projectDir)}`;
+      const response = await request(baseUrl, pathname);
+      expect(response.statusCode).toBe(200);
+      expect(response.contentType).toContain("image/png");
+      expect(response.body).toBe("png-logo");
+    });
+  });
+
+  it("serves public/logo.jpg when no favicon exists", async () => {
+    const projectDir = makeTempDir("agents-favicon-route-public-logo-jpg-");
+    const iconPath = path.join(projectDir, "apps", "web", "public", "logo.jpg");
+    fs.mkdirSync(path.dirname(iconPath), { recursive: true });
+    fs.writeFileSync(iconPath, "jpg-logo", "utf8");
+
+    await withRouteServer(async (baseUrl) => {
+      const pathname = `/api/project-favicon?cwd=${encodeURIComponent(projectDir)}`;
+      const response = await request(baseUrl, pathname);
+      expect(response.statusCode).toBe(200);
+      expect(response.contentType).toContain("image/jpeg");
+      expect(response.body).toBe("jpg-logo");
+    });
+  });
+
   it("serves public/logo.svg when no favicon exists (e.g. agents monorepo)", async () => {
     const projectDir = makeTempDir("agents-favicon-route-public-logo-");
     const iconPath = path.join(projectDir, "apps", "web", "public", "logo.svg");
