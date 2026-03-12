@@ -27,7 +27,7 @@ export function SettingsSegmentedControl<T extends string>({
   return (
     <fieldset className="min-w-0 border-0 p-0">
       <legend className="sr-only">{legend}</legend>
-      <div className={cn("grid gap-2 sm:grid-cols-3", className)}>
+      <div className={cn("grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-2", className)}>
         {options.map((option) => (
           <label
             key={option.value}
@@ -80,7 +80,7 @@ export function SettingsCardRadioGroup<T extends string>({
   return (
     <fieldset className="min-w-0 border-0 p-0">
       <legend className="sr-only">{legend}</legend>
-      <div className={cn("grid gap-2 sm:grid-cols-4", className)}>
+      <div className={cn("grid grid-cols-[repeat(auto-fit,minmax(8rem,1fr))] gap-2", className)}>
         {options.map((option) => {
           const selected = value === option.value;
           return (

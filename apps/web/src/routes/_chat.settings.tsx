@@ -114,9 +114,9 @@ function SettingsRouteView() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 lg:flex-row lg:gap-6">
-            <aside className="hidden w-64 shrink-0 lg:block">
+        <div className="min-w-0 flex-1 overflow-x-auto overflow-y-auto px-4 py-5 sm:px-6">
+          <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-5 xl:flex-row xl:gap-6">
+            <aside className="hidden w-[240px] shrink-0 xl:block">
               <nav
                 className="sticky top-4 space-y-1 rounded-2xl border border-border bg-card/80 p-2 text-xs shadow-xs/5 backdrop-blur-sm"
                 aria-label="Settings sections"
@@ -151,7 +151,7 @@ function SettingsRouteView() {
                   Configure app-level preferences for this device.
                 </p>
                 <nav
-                  className="mt-2 flex gap-1.5 overflow-x-auto pb-1 lg:hidden"
+                  className="mt-2 flex gap-1.5 overflow-x-auto pb-1 xl:hidden"
                   aria-label="Settings sections"
                 >
                   {SETTINGS_TABS.map((tab) => {

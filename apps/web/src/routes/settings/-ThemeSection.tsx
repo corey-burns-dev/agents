@@ -259,7 +259,7 @@ export function ThemeSection() {
               value={uiSettings.themePreset}
               onChange={(themePreset) => updateUISettings({ themePreset })}
               options={PALETTE_OPTIONS}
-              className="grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+              className="grid-cols-[repeat(auto-fit,minmax(7.5rem,1fr))]"
               renderCard={(option) => <ThemeSwatchPreview preset={option.value} />}
             />
           )}
@@ -350,7 +350,7 @@ export function ThemeSection() {
             value={uiSettings.radiusPreset}
             onChange={(radiusPreset) => updateUISettings({ radiusPreset })}
             options={RADIUS_OPTIONS_LIST}
-            className="grid-cols-2 sm:grid-cols-4"
+            className="grid-cols-[repeat(auto-fit,minmax(7.5rem,1fr))]"
             renderCard={(option, selected) => (
               <RadiusPreviewCard radius={option.value} selected={selected} />
             )}
