@@ -101,6 +101,7 @@ export function ProjectFaviconPickerDialog({
                     cwd={project?.cwd ?? ""}
                     relativePathOverride={entry.path}
                     displaySize="large"
+                    projectName={project?.name ?? ""}
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-foreground">

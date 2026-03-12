@@ -10,16 +10,17 @@
 - `bun run build` — Builds contracts, server, web app, and desktop in dependency order.
 - `bun run typecheck` — Strict TypeScript checks for all packages.
 - `bun run test` — Runs workspace tests.
-- `bun run dist:desktop:artifact -- --platform <linux|win> --target <target> --arch <arch>` — Builds a desktop artifact for a specific platform/target/arch.
+- `bun run dist:desktop:artifact -- --platform <linux|mac|win> --target <target> --arch <arch>` — Builds a desktop artifact for a specific platform/target/arch.
 - `bun run dist:desktop:linux` — Builds a Linux AppImage into `./release`.
+- `bun run dist:desktop:mac` — Builds a macOS `.dmg` into `./release`.
 - `bun run dist:desktop:win` — Builds a Windows NSIS installer into `./release`.
 
 ## Desktop packaging notes
 
-- Desktop production windows load the bundled UI from `agents://app/index.html` (not a `127.0.0.1` document URL).
+- Desktop production windows load the bundled UI from the packaged `apps/server/dist/client/index.html`.
 - Desktop packaging includes `apps/server/dist` (the `agents` backend) and starts it on loopback with an auth token for WebSocket/API traffic.
-- To keep staging files for debugging package contents, run: `bun run dist:desktop:artifact -- --keep-stage`
-- Windows `--signed` uses Azure Trusted Signing and expects:
+- Windows `--signed` is accepted by the root packaging flow, but the current Electron path still emits an unsigned artifact and only logs the signing request.
+- Historical Azure Trusted Signing environment variables are still passed through for future Electron signing work:
   `AZURE_TRUSTED_SIGNING_ENDPOINT`, `AZURE_TRUSTED_SIGNING_ACCOUNT_NAME`,
   `AZURE_TRUSTED_SIGNING_CERTIFICATE_PROFILE_NAME`, and `AZURE_TRUSTED_SIGNING_PUBLISHER_NAME`.
 - Azure authentication env vars are also required (for example service principal with secret):

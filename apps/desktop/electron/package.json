@@ -1,0 +1,68 @@
+{
+  "name": "@agents/desktop",
+  "version": "0.0.4-alpha.1",
+  "private": true,
+  "main": "dist-electron/main.cjs",
+  "scripts": {
+    "dev": "bun run --parallel dev:bundle dev:electron",
+    "dev:bundle": "tsdown --watch",
+    "dev:electron": "node scripts/dev-electron.mjs",
+    "build": "tsdown",
+    "start": "node scripts/start-electron.mjs",
+    "package": "node scripts/package-electron.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "smoke-test": "node scripts/smoke-test.mjs"
+  },
+  "dependencies": {
+    "@agents/shared": "workspace:*",
+    "electron": "^40.6.0"
+  },
+  "devDependencies": {
+    "@agents/contracts": "workspace:*",
+    "@types/node": "catalog:",
+    "electron-builder": "^26.0.12",
+    "electronmon": "^2.0.2",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "wait-on": "^8.0.5"
+  },
+  "build": {
+    "appId": "com.agents.agents",
+    "productName": "Agents",
+    "asar": true,
+    "files": [
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../../apps/server/dist",
+        "to": "apps/server/dist",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "linux": {
+      "category": "Development",
+      "target": [
+        "AppImage"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
+  },
+  "productName": "Agents"
+}

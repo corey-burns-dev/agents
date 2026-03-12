@@ -614,7 +614,7 @@ const ProjectDock = memo(function ProjectDock({
   );
 
   return (
-    <div className="flex h-full w-full shrink-0 flex-col border-l border-border/70 bg-card/60 text-foreground backdrop-blur-sm">
+    <div className="flex h-full w-full shrink-0 flex-col bg-card text-foreground">
       <div className="flex items-center gap-1 border-b border-border/60 px-3 py-2">
         <button
           type="button"

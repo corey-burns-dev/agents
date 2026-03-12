@@ -15,7 +15,7 @@ bun run build
 bun run start
 
 # Build a shareable macOS .dmg (arm64 by default)
-bun run dist:desktop:dmg
+bun run dist:desktop:mac
 
 # Or from any project directory after publishing:
 npx agents

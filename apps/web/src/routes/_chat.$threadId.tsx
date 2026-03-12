@@ -1,8 +1,17 @@
 import { ThreadId } from "@agents/contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DiffIcon, FolderTreeIcon, PanelRightCloseIcon } from "lucide-react";
-import { type CSSProperties, lazy, type ReactNode, Suspense, useCallback, useEffect } from "react";
-import { Sidebar, SidebarInset, SidebarProvider, SidebarRail } from "~/components/ui/sidebar";
+import {
+  lazy,
+  type PointerEvent,
+  type ReactNode,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { SidebarInset } from "~/components/ui/sidebar";
 import ChatView from "../components/ChatView";
 import { Button } from "../components/ui/button";
 import { Sheet, SheetPopup } from "../components/ui/sheet";
@@ -19,10 +28,29 @@ import { useStore } from "../store";
 
 const DiffPanel = lazy(() => import("../components/DiffPanel"));
 const ProjectDock = lazy(() => import("../components/ProjectDock"));
-const DIFF_INLINE_LAYOUT_MEDIA_QUERY = "(max-width: 1180px)";
+const RIGHT_DOCK_SHEET_MEDIA_QUERY = "(max-width: 767px)";
 const RIGHT_DOCK_WIDTH_STORAGE_KEY = "chat_right_dock_width";
-const RIGHT_DOCK_DEFAULT_WIDTH = "clamp(28rem,48vw,44rem)";
-const RIGHT_DOCK_MIN_WIDTH = 26 * 16;
+const LEFT_PROJECTS_SIDEBAR_DEFAULT_WIDTH = 16 * 16;
+const RIGHT_DOCK_DEFAULT_WIDTH = Math.round(LEFT_PROJECTS_SIDEBAR_DEFAULT_WIDTH * 1.2);
+const RIGHT_DOCK_MIN_WIDTH = 16 * 16;
+const RIGHT_DOCK_MAX_WIDTH = 40 * 16;
+
+function clampRightDockWidth(width: number): number {
+  return Math.max(RIGHT_DOCK_MIN_WIDTH, Math.min(width, RIGHT_DOCK_MAX_WIDTH));
+}
+
+function readRightDockWidth(): number {
+  if (typeof window === "undefined") {
+    return RIGHT_DOCK_DEFAULT_WIDTH;
+  }
+
+  const storedWidth = Number(window.localStorage.getItem(RIGHT_DOCK_WIDTH_STORAGE_KEY));
+  if (!Number.isFinite(storedWidth)) {
+    return RIGHT_DOCK_DEFAULT_WIDTH;
+  }
+
+  return clampRightDockWidth(storedWidth);
+}
 
 const DiffLoadingFallback = (props: { inline: boolean }) => {
   if (props.inline) {
@@ -34,7 +62,10 @@ const DiffLoadingFallback = (props: { inline: boolean }) => {
   }
 
   return (
-    <aside className="flex h-full w-140 shrink-0 items-center justify-center border-l border-border bg-card px-4 text-center text-xs text-muted-foreground/70">
+    <aside
+      className="flex h-full shrink-0 items-center justify-center border-l border-border bg-card px-4 text-center text-xs text-muted-foreground/70"
+      style={{ width: `${RIGHT_DOCK_DEFAULT_WIDTH}px` }}
+    >
       Loading diff viewer...
     </aside>
   );
@@ -50,7 +81,10 @@ const ProjectDockLoadingFallback = (props: { inline: boolean }) => {
   }
 
   return (
-    <aside className="flex h-full w-104 shrink-0 items-center justify-center border-l border-border bg-card px-4 text-center text-xs text-muted-foreground/70">
+    <aside
+      className="flex h-full shrink-0 items-center justify-center border-l border-border bg-card px-4 text-center text-xs text-muted-foreground/70"
+      style={{ width: `${RIGHT_DOCK_DEFAULT_WIDTH}px` }}
+    >
       Loading project dock...
     </aside>
   );
@@ -62,7 +96,6 @@ const RightDockInlineSidebar = (props: {
   open: boolean;
   pane: RightDockPane;
   onClose: () => void;
-  onOpen: () => void;
   onSwitchToDiff: () => void;
   onSwitchToProject: () => void;
   canShowDiff: boolean;
@@ -73,149 +106,256 @@ const RightDockInlineSidebar = (props: {
     open,
     pane,
     onClose,
-    onOpen,
     onSwitchToDiff,
     onSwitchToProject,
     canShowDiff,
     canShowProject,
     projectDockContent,
   } = props;
-  const onOpenChange = useCallback(
-    (nextOpen: boolean) => {
-      if (nextOpen) {
-        onOpen();
+  const [width, setWidth] = useState(RIGHT_DOCK_DEFAULT_WIDTH);
+  const paneRef = useRef<HTMLElement | null>(null);
+  const resizeStateRef = useRef<{
+    moved: boolean;
+    pendingWidth: number;
+    pointerId: number;
+    rafId: number | null;
+    startWidth: number;
+    startX: number;
+    target: HTMLButtonElement;
+  } | null>(null);
+
+  useEffect(() => {
+    setWidth(readRightDockWidth());
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(RIGHT_DOCK_WIDTH_STORAGE_KEY, String(width));
+  }, [width]);
+
+  const shouldAcceptInlineSidebarWidth = useCallback((nextWidth: number) => {
+    const pane = paneRef.current;
+    const composerForm = document.querySelector<HTMLElement>("[data-chat-composer-form='true']");
+    if (!pane || !composerForm) return true;
+
+    const composerViewport = composerForm.parentElement;
+    if (!composerViewport) return true;
+
+    const previousPaneWidth = pane.style.width;
+    pane.style.width = `${nextWidth}px`;
+
+    const viewportStyle = window.getComputedStyle(composerViewport);
+    const viewportPaddingLeft = Number.parseFloat(viewportStyle.paddingLeft) || 0;
+    const viewportPaddingRight = Number.parseFloat(viewportStyle.paddingRight) || 0;
+    const viewportContentWidth = Math.max(
+      0,
+      composerViewport.clientWidth - viewportPaddingLeft - viewportPaddingRight,
+    );
+    const formRect = composerForm.getBoundingClientRect();
+    const hasComposerOverflow = composerForm.scrollWidth > composerForm.clientWidth + 0.5;
+    const overflowsViewport = formRect.width > viewportContentWidth + 0.5;
+
+    pane.style.width = previousPaneWidth;
+    return !hasComposerOverflow && !overflowsViewport;
+  }, []);
+
+  const stopResize = useCallback((pointerId: number) => {
+    const resizeState = resizeStateRef.current;
+    if (!resizeState) {
+      return;
+    }
+
+    if (resizeState.rafId !== null) {
+      window.cancelAnimationFrame(resizeState.rafId);
+    }
+
+    resizeStateRef.current = null;
+    if (resizeState.target.hasPointerCapture(pointerId)) {
+      resizeState.target.releasePointerCapture(pointerId);
+    }
+    document.body.style.removeProperty("cursor");
+    document.body.style.removeProperty("user-select");
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      const resizeState = resizeStateRef.current;
+      if (resizeState && resizeState.rafId !== null) {
+        window.cancelAnimationFrame(resizeState.rafId);
+      }
+      document.body.style.removeProperty("cursor");
+      document.body.style.removeProperty("user-select");
+    };
+  }, []);
+
+  const handleResizePointerDown = useCallback(
+    (event: PointerEvent<HTMLButtonElement>) => {
+      if (!open || event.button !== 0) {
         return;
       }
-      onClose();
+
+      event.preventDefault();
+      resizeStateRef.current = {
+        moved: false,
+        pendingWidth: width,
+        pointerId: event.pointerId,
+        rafId: null,
+        startWidth: width,
+        startX: event.clientX,
+        target: event.currentTarget,
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
     },
-    [onClose, onOpen],
+    [open, width],
   );
-  const shouldAcceptInlineSidebarWidth = useCallback(
-    ({ nextWidth, wrapper }: { nextWidth: number; wrapper: HTMLElement }) => {
-      const composerForm = document.querySelector<HTMLElement>("[data-chat-composer-form='true']");
-      if (!composerForm) return true;
-      const composerViewport = composerForm.parentElement;
-      if (!composerViewport) return true;
-      const previousSidebarWidth = wrapper.style.getPropertyValue("--sidebar-width");
-      wrapper.style.setProperty("--sidebar-width", `${nextWidth}px`);
 
-      const viewportStyle = window.getComputedStyle(composerViewport);
-      const viewportPaddingLeft = Number.parseFloat(viewportStyle.paddingLeft) || 0;
-      const viewportPaddingRight = Number.parseFloat(viewportStyle.paddingRight) || 0;
-      const viewportContentWidth = Math.max(
-        0,
-        composerViewport.clientWidth - viewportPaddingLeft - viewportPaddingRight,
-      );
-      const formRect = composerForm.getBoundingClientRect();
-      const hasComposerOverflow = composerForm.scrollWidth > composerForm.clientWidth + 0.5;
-      const overflowsViewport = formRect.width > viewportContentWidth + 0.5;
-
-      if (previousSidebarWidth.length > 0) {
-        wrapper.style.setProperty("--sidebar-width", previousSidebarWidth);
-      } else {
-        wrapper.style.removeProperty("--sidebar-width");
+  const handleResizePointerMove = useCallback(
+    (event: PointerEvent<HTMLButtonElement>) => {
+      const resizeState = resizeStateRef.current;
+      if (!resizeState || resizeState.pointerId !== event.pointerId) {
+        return;
       }
 
-      return !hasComposerOverflow && !overflowsViewport;
+      event.preventDefault();
+      const delta = resizeState.startX - event.clientX;
+      if (Math.abs(delta) > 2) {
+        resizeState.moved = true;
+      }
+      resizeState.pendingWidth = clampRightDockWidth(resizeState.startWidth + delta);
+      if (resizeState.rafId !== null) {
+        return;
+      }
+
+      resizeState.rafId = window.requestAnimationFrame(() => {
+        const activeResizeState = resizeStateRef.current;
+        if (!activeResizeState) {
+          return;
+        }
+
+        activeResizeState.rafId = null;
+        if (!shouldAcceptInlineSidebarWidth(activeResizeState.pendingWidth)) {
+          return;
+        }
+
+        setWidth(activeResizeState.pendingWidth);
+      });
     },
-    [],
+    [shouldAcceptInlineSidebarWidth],
   );
 
+  const handleResizePointerEnd = useCallback(
+    (event: PointerEvent<HTMLButtonElement>) => {
+      const resizeState = resizeStateRef.current;
+      if (!resizeState || resizeState.pointerId !== event.pointerId) {
+        return;
+      }
+
+      event.preventDefault();
+      stopResize(event.pointerId);
+    },
+    [stopResize],
+  );
+
+  if (!open) {
+    return null;
+  }
+
   return (
-    <SidebarProvider
-      defaultOpen={false}
-      open={open}
-      onOpenChange={onOpenChange}
-      className="w-auto min-h-0 flex-none bg-transparent"
-      style={{ "--sidebar-width": RIGHT_DOCK_DEFAULT_WIDTH } as CSSProperties}
+    <aside
+      ref={paneRef}
+      className="relative flex h-dvh min-h-0 shrink-0 flex-col border-l border-border bg-card text-foreground"
+      style={{ width: `${width}px` }}
     >
-      <Sidebar
-        side="right"
-        collapsible="offcanvas"
-        className="border-l border-border bg-card text-foreground"
-        resizable={{
-          minWidth: RIGHT_DOCK_MIN_WIDTH,
-          shouldAcceptWidth: shouldAcceptInlineSidebarWidth,
-          storageKey: RIGHT_DOCK_WIDTH_STORAGE_KEY,
-        }}
+      <button
+        type="button"
+        aria-label="Resize right panel"
+        className="absolute inset-y-0 -left-2 z-20 hidden w-4 cursor-col-resize md:block"
+        onPointerCancel={handleResizePointerEnd}
+        onPointerDown={handleResizePointerDown}
+        onPointerMove={handleResizePointerMove}
+        onPointerUp={handleResizePointerEnd}
       >
-        <div className="flex h-full min-h-0 flex-col">
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/60 bg-muted/30 px-3 py-2">
-            <div className="flex items-center gap-1">
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      size="sm"
-                      variant={pane === "diff" ? "secondary" : "ghost"}
-                      className={cn("h-8 gap-2 px-3", pane === "diff" && "bg-background shadow-sm")}
-                      onClick={onSwitchToDiff}
-                      disabled={!canShowDiff}
-                      aria-label="Diff view"
-                    >
-                      <DiffIcon className="size-4" />
-                      <span className="text-xs font-medium">Diff</span>
-                    </Button>
-                  }
-                />
-                <TooltipPopup side="bottom">
-                  {canShowDiff ? "Diff view" : "Diff is unavailable (not a git repo)."}
-                </TooltipPopup>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      size="sm"
-                      variant={pane === "project" ? "secondary" : "ghost"}
-                      className={cn(
-                        "h-8 gap-2 px-3",
-                        pane === "project" && "bg-background shadow-sm",
-                      )}
-                      onClick={onSwitchToProject}
-                      disabled={!canShowProject}
-                      aria-label="Project dock"
-                    >
-                      <FolderTreeIcon className="size-4" />
-                      <span className="text-xs font-medium">Project</span>
-                    </Button>
-                  }
-                />
-                <TooltipPopup side="bottom">
-                  {canShowProject ? "Project dock" : "Project dock is unavailable (no project)."}
-                </TooltipPopup>
-              </Tooltip>
-            </div>
+        <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors hover:bg-border" />
+      </button>
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/60 bg-muted/30 px-3 py-2">
+          <div className="flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger
                 render={
                   <Button
-                    size="icon-xs"
-                    variant="ghost"
-                    className="size-8 text-muted-foreground hover:text-foreground"
-                    onClick={onClose}
-                    aria-label="Close panel"
+                    size="sm"
+                    variant={pane === "diff" ? "secondary" : "ghost"}
+                    className={cn("h-8 gap-2 px-3", pane === "diff" && "bg-background shadow-sm")}
+                    onClick={onSwitchToDiff}
+                    disabled={!canShowDiff}
+                    aria-label="Diff view"
                   >
-                    <PanelRightCloseIcon className="size-4" />
+                    <DiffIcon className="size-4" />
+                    <span className="text-xs font-medium">Diff</span>
                   </Button>
                 }
               />
-              <TooltipPopup side="bottom">Close panel</TooltipPopup>
+              <TooltipPopup side="bottom">
+                {canShowDiff ? "Diff view" : "Diff is unavailable (not a git repo)."}
+              </TooltipPopup>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    size="sm"
+                    variant={pane === "project" ? "secondary" : "ghost"}
+                    className={cn(
+                      "h-8 gap-2 px-3",
+                      pane === "project" && "bg-background shadow-sm",
+                    )}
+                    onClick={onSwitchToProject}
+                    disabled={!canShowProject}
+                    aria-label="Project dock"
+                  >
+                    <FolderTreeIcon className="size-4" />
+                    <span className="text-xs font-medium">Project</span>
+                  </Button>
+                }
+              />
+              <TooltipPopup side="bottom">
+                {canShowProject ? "Project dock" : "Project dock is unavailable (no project)."}
+              </TooltipPopup>
             </Tooltip>
           </div>
-          <div className="min-w-0 flex-1 overflow-hidden">
-            {pane === "diff" ? (
-              <Suspense fallback={<DiffLoadingFallback inline />}>
-                <DiffPanel mode="sidebar" />
-              </Suspense>
-            ) : (
-              projectDockContent
-            )}
-          </div>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  size="icon-xs"
+                  variant="ghost"
+                  className="size-8 text-muted-foreground hover:text-foreground"
+                  onClick={onClose}
+                  aria-label="Close panel"
+                >
+                  <PanelRightCloseIcon className="size-4" />
+                </Button>
+              }
+            />
+            <TooltipPopup side="bottom">Close panel</TooltipPopup>
+          </Tooltip>
         </div>
-        <SidebarRail />
-      </Sidebar>
-    </SidebarProvider>
+        <div className="min-w-0 flex-1 overflow-hidden">
+          {pane === "diff" ? (
+            <Suspense fallback={<DiffLoadingFallback inline />}>
+              <DiffPanel mode="sidebar" />
+            </Suspense>
+          ) : (
+            projectDockContent
+          )}
+        </div>
+      </div>
+    </aside>
   );
 };
 
@@ -305,7 +445,7 @@ function ChatThreadRouteView() {
   const projectDockOpen = search.projectDock === "1" && !diffOpen;
   const rightDockOpen = diffOpen || projectDockOpen;
   const rightDockPane: RightDockPane = diffOpen ? "diff" : "project";
-  const shouldUseRightDockSheet = useMediaQuery(DIFF_INLINE_LAYOUT_MEDIA_QUERY);
+  const shouldUseRightDockSheet = useMediaQuery(RIGHT_DOCK_SHEET_MEDIA_QUERY);
 
   const closeRightDock = useCallback(() => {
     void navigate({
@@ -349,10 +489,6 @@ function ChatThreadRouteView() {
   const canShowProject = Boolean(activeProject);
   const canShowDiff = true;
 
-  const openRightDock = useCallback(() => {
-    openRightDockWithPane(canShowProject ? "project" : "diff");
-  }, [openRightDockWithPane, canShowProject]);
-
   const projectDockContentNode = (
     <Suspense fallback={<ProjectDockLoadingFallback inline />}>
       <ProjectDockRouteSlot onClose={closeRightDock} />
@@ -384,7 +520,6 @@ function ChatThreadRouteView() {
           open={rightDockOpen}
           pane={rightDockPane}
           onClose={closeRightDock}
-          onOpen={openRightDock}
           onSwitchToDiff={() => openRightDockWithPane("diff")}
           onSwitchToProject={() => openRightDockWithPane("project")}
           canShowDiff={canShowDiff}

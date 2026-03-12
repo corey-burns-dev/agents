@@ -2,8 +2,7 @@
 
 - `/apps/server`: Node.js WebSocket server. Manages provider sessions (Codex, Gemini, Claude Code), serves the built web app, and opens the browser on start.
 - `/apps/web`: React + Vite UI. Session control, conversation, and provider event rendering. Connects to the server via WebSocket.
-- `/apps/desktop/tauri`: Tauri 2 desktop shell. Spawns a desktop-scoped `agents` backend process and loads the shared web app.
-- `/apps/desktop/qt6`: Qt6 (C++) desktop shell. WebEngine hosts the web app; same server lifecycle as desktop (spawn in prod, dev-runner in dev). No Python.
+- `/apps/desktop/electron`: Electron desktop shell. Spawns a desktop-scoped `agents` backend process, exposes the `DesktopBridge`, and loads the shared web app.
 - `/packages/contracts`: Shared Zod schemas and TypeScript contracts for provider events, WebSocket protocol, and model/session types. Schema-only — no runtime logic.
 - `/packages/shared`: Shared runtime utilities with explicit subpath exports (e.g. `@agents/shared/git`). No barrel index.
 

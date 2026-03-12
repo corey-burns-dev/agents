@@ -1,4 +1,4 @@
-import "./tauri-bridge";
+import "./desktop-bridge";
 import { createBrowserHistory, createHashHistory, RouterProvider } from "@tanstack/react-router";
 import React from "react";
 import ReactDOM from "react-dom/client";
@@ -7,9 +7,9 @@ import "@xterm/xterm/css/xterm.css";
 import "./index.css";
 
 import { APP_DISPLAY_NAME } from "./branding";
+import { ready } from "./desktop-bridge";
 import { isDesktopShell } from "./env";
 import { getRouter } from "./router";
-import { ready } from "./tauri-bridge";
 import { setupZoom } from "./zoom";
 
 setupZoom();

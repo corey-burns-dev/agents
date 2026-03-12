@@ -36,7 +36,7 @@ export default defineConfig({
     strictPort: true,
     hmr: {
       // Explicit config so Vite's HMR WebSocket connects reliably
-      // inside Tauri's webview.
+      // inside the desktop shell webview.
       protocol: "ws",
       host: "localhost",
     },

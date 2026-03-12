@@ -1,7 +1,11 @@
 import { ProjectId, ThreadId } from "@agents/contracts";
 import { describe, expect, it } from "vitest";
 import type { DraftThreadState } from "./composerDraftStore";
-import { buildProjectDraftThreadMap, buildProjectThreadList } from "./threadDrafts";
+import {
+  buildProjectDraftThreadMap,
+  buildProjectThreadList,
+  resolveProjectLatestThreadTarget,
+} from "./threadDrafts";
 import type { Project, Thread } from "./types";
 
 function createProject(overrides?: Partial<Project>): Project {
@@ -114,5 +118,80 @@ describe("threadDrafts", () => {
       threadId,
       draftThread: expect.objectContaining({ projectId }),
     });
+  });
+
+  it("resolves the draft thread as the latest navigation target", () => {
+    const target = resolveProjectLatestThreadTarget({
+      project: createProject(),
+      threads: [
+        createThread({
+          id: ThreadId.makeUnsafe("thread-older"),
+          createdAt: "2026-03-09T09:00:00.000Z",
+        }),
+      ],
+      projectDraftThread: {
+        threadId: ThreadId.makeUnsafe("draft-thread"),
+        draftThread: createDraftThread(),
+      },
+    });
+
+    expect(target).toEqual({
+      kind: "thread",
+      threadId: ThreadId.makeUnsafe("draft-thread"),
+    });
+  });
+
+  it("falls back to the newest persisted thread when no draft exists", () => {
+    const target = resolveProjectLatestThreadTarget({
+      project: createProject(),
+      threads: [
+        createThread({
+          id: ThreadId.makeUnsafe("thread-older"),
+          createdAt: "2026-03-09T09:00:00.000Z",
+        }),
+        createThread({
+          id: ThreadId.makeUnsafe("thread-newer"),
+          createdAt: "2026-03-09T11:00:00.000Z",
+        }),
+      ],
+      projectDraftThread: null,
+    });
+
+    expect(target).toEqual({
+      kind: "thread",
+      threadId: ThreadId.makeUnsafe("thread-newer"),
+    });
+  });
+
+  it("breaks latest-thread ties by descending thread id", () => {
+    const target = resolveProjectLatestThreadTarget({
+      project: createProject(),
+      threads: [
+        createThread({
+          id: ThreadId.makeUnsafe("thread-a"),
+          createdAt: "2026-03-09T11:00:00.000Z",
+        }),
+        createThread({
+          id: ThreadId.makeUnsafe("thread-b"),
+          createdAt: "2026-03-09T11:00:00.000Z",
+        }),
+      ],
+      projectDraftThread: null,
+    });
+
+    expect(target).toEqual({
+      kind: "thread",
+      threadId: ThreadId.makeUnsafe("thread-b"),
+    });
+  });
+
+  it("returns create when the project has no threads or draft", () => {
+    const target = resolveProjectLatestThreadTarget({
+      project: createProject(),
+      threads: [],
+      projectDraftThread: null,
+    });
+
+    expect(target).toEqual({ kind: "create" });
   });
 });

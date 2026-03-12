@@ -85,15 +85,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - label: macOS arm64
+            runner: macos-14
+            platform: mac
+            target: dmg
+            arch: arm64
           - label: Linux x64
             runner: ubuntu-24.04
             platform: linux
             target: AppImage
-            arch: x64
-          - label: Linux x64 Flatpak
-            runner: ubuntu-24.04
-            platform: linux
-            target: flatpak
             arch: x64
           - label: Windows x64
             runner: windows-2022
@@ -119,14 +119,6 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
-
-      - name: Install Flatpak (Linux Flatpak job)
-        if: matrix.target == 'flatpak'
-        run: |
-          sudo add-apt-repository -y ppa:alexlarsson/flatpak
-          sudo apt-get update
-          sudo apt-get install -y flatpak flatpak-builder
-          flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
       - name: Build desktop artifact
         shell: bash
@@ -185,8 +177,8 @@ jobs:
           shopt -s nullglob
           for pattern in \
             "release/*.zip" \
+            "release/*.dmg" \
             "release/*.AppImage" \
-            "release/*.flatpak" \
             "release/*.exe" \
             "release/*.blockmap" \
             "release/latest*.yml"; do
@@ -255,8 +247,8 @@ jobs:
           make_latest: ${{ needs.preflight.outputs.make_latest }}
           files: |
             release-assets/*.zip
+            release-assets/*.dmg
             release-assets/*.AppImage
-            release-assets/*.flatpak
             release-assets/*.exe
             release-assets/*.blockmap
             release-assets/latest*.yml
@@ -293,7 +285,7 @@ jobs:
 
             const files = [
               "apps/server/package.json",
-              "apps/desktop/tauri/package.json",
+              "apps/desktop/electron/package.json",
               "apps/web/package.json",
               "packages/contracts/package.json",
             ];
@@ -317,7 +309,7 @@ jobs:
 
       - name: Format package.json files
         if: steps.update_versions.outputs.changed == 'true'
-        run: bunx biome format --write apps/server/package.json apps/desktop/tauri/package.json apps/web/package.json packages/contracts/package.json
+        run: bunx biome format --write apps/server/package.json apps/desktop/electron/package.json apps/web/package.json packages/contracts/package.json
 
       - name: Refresh lockfile
         if: steps.update_versions.outputs.changed == 'true'
@@ -329,7 +321,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
         run: |
-          if git diff --quiet -- apps/server/package.json apps/desktop/tauri/package.json apps/web/package.json packages/contracts/package.json bun.lock; then
+          if git diff --quiet -- apps/server/package.json apps/desktop/electron/package.json apps/web/package.json packages/contracts/package.json bun.lock; then
             echo "No version changes to commit."
             exit 0
           fi
@@ -337,6 +329,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add apps/server/package.json apps/desktop/tauri/package.json apps/web/package.json packages/contracts/package.json bun.lock
+          git add apps/server/package.json apps/desktop/electron/package.json apps/web/package.json packages/contracts/package.json bun.lock
           git commit -m "chore(release): prepare $RELEASE_TAG"
           git push origin HEAD:main

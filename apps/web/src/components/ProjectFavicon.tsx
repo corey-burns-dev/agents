@@ -10,13 +10,41 @@ const FAVICON_SIZE_CLASS_NAMES: Record<ProjectFaviconDisplaySize, string> = {
   large: "size-4.5",
 };
 
+export function getProjectAvatarInitials(projectName: string): string {
+  const normalized = [...projectName.trim()]
+    .filter((char) => /[\p{L}\p{N}]/u.test(char))
+    .slice(0, 2)
+    .join("");
+
+  return normalized.length > 0 ? normalized.toUpperCase() : "??";
+}
+
+function ProjectFaviconFallback({
+  projectName,
+  sizeClassName,
+}: {
+  projectName: string;
+  sizeClassName: string;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`${sizeClassName} inline-flex shrink-0 items-center justify-center rounded-md border border-border/70 bg-muted/70 font-semibold text-[0.55rem] tracking-[0.08em] text-muted-foreground/90 uppercase shadow-xs/5`}
+    >
+      {getProjectAvatarInitials(projectName)}
+    </span>
+  );
+}
+
 function ProjectFaviconImage({
   cwd,
+  projectName,
   sizeClassName,
   overridePath,
   overrideSetAt,
 }: {
   cwd: string;
+  projectName: string;
   sizeClassName: string;
   overridePath: string | null;
   overrideSetAt: number;
@@ -38,7 +66,7 @@ function ProjectFaviconImage({
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
 
   if (status === "error") {
-    return <FolderIcon className={`${sizeClassName} shrink-0 text-muted-foreground/50`} />;
+    return <ProjectFaviconFallback projectName={projectName} sizeClassName={sizeClassName} />;
   }
 
   return (
@@ -74,23 +102,29 @@ function ProjectFaviconImage({
 export function ProjectFavicon({
   cwd,
   displaySize,
+  projectName,
   relativePathOverride,
+  sizeClassName,
 }: {
   cwd: string;
   displaySize?: ProjectFaviconDisplaySize;
+  projectName?: string;
   relativePathOverride?: string | null;
+  sizeClassName?: string;
 }) {
   const { settings } = useUISettings();
   const { relativePath: storedOverride, setAt: storedSetAt } = useProjectFaviconOverride(cwd);
   const effectiveOverride = relativePathOverride ?? storedOverride ?? null;
   const effectiveSize = displaySize ?? settings.projectFaviconSize;
-  const sizeClassName = FAVICON_SIZE_CLASS_NAMES[effectiveSize];
+  const resolvedSizeClassName = sizeClassName ?? FAVICON_SIZE_CLASS_NAMES[effectiveSize];
+  const effectiveProjectName = projectName?.trim() || cwd;
 
   return (
     <ProjectFaviconImage
-      key={`${cwd}:${effectiveOverride ?? "__auto__"}:${storedSetAt}`}
+      key={`${cwd}:${effectiveOverride ?? "__auto__"}:${storedSetAt}:${effectiveProjectName}`}
       cwd={cwd}
-      sizeClassName={sizeClassName}
+      projectName={effectiveProjectName}
+      sizeClassName={resolvedSizeClassName}
       overridePath={effectiveOverride}
       overrideSetAt={storedSetAt}
     />

@@ -68,6 +68,35 @@ export function buildProjectThreadList(input: {
   ].toSorted(sortThreadsNewestFirst);
 }
 
+export type ProjectLatestThreadTarget =
+  | {
+      kind: "create";
+    }
+  | {
+      kind: "thread";
+      threadId: ThreadId;
+    };
+
+export function resolveProjectLatestThreadTarget(input: {
+  project: Project;
+  threads: readonly Thread[];
+  projectDraftThread: {
+    threadId: ThreadId;
+    draftThread: DraftThreadState;
+  } | null;
+}): ProjectLatestThreadTarget {
+  const latestThread = buildProjectThreadList(input)[0];
+
+  if (!latestThread) {
+    return { kind: "create" };
+  }
+
+  return {
+    kind: "thread",
+    threadId: latestThread.id,
+  };
+}
+
 export function buildProjectDraftThreadMap(input: {
   draftThreadsByThreadId: Record<ThreadId, DraftThreadState>;
   projectDraftThreadIdByProjectId: Record<ProjectId, ThreadId>;

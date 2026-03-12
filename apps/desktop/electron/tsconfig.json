@@ -2,7 +2,9 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
+    "types": ["node"],
+    "lib": ["ES2023"],
     "noEmit": true
   },
-  "include": ["empty.ts"]
+  "include": ["src", "tsdown.config.ts"]
 }

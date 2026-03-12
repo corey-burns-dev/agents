@@ -21,7 +21,7 @@ export const DEFAULT_DEV_STATE_DIR = Effect.map(Effect.service(Path.Path), (path
   path.join(homedir(), ".agents", "dev"),
 );
 
-const DEV_MODES = ["dev", "dev:server", "dev:web", "dev:desktop", "dev:qt6"] as const;
+const DEV_MODES = ["dev", "dev:server", "dev:web", "dev:desktop"] as const;
 type DevMode = (typeof DEV_MODES)[number];
 
 /** For each mode: optional contracts build first, then one or more workspace dev commands (run in parallel when multiple). */
@@ -69,19 +69,7 @@ const MODE_DEV_COMMANDS: Record<
         script: "dev",
         extraArgsToServer: true,
       },
-      { cwd: path.join(ROOT, "apps/desktop/tauri"), script: "dev" },
-      { cwd: path.join(ROOT, "apps/web"), script: "dev" },
-    ],
-  },
-  "dev:qt6": {
-    buildContractsFirst: true,
-    workspaces: [
-      {
-        cwd: path.join(ROOT, "apps/server"),
-        script: "dev",
-        extraArgsToServer: true,
-      },
-      { cwd: path.join(ROOT, "apps/desktop/qt6"), script: "dev" },
+      { cwd: path.join(ROOT, "apps/desktop/electron"), script: "dev" },
       { cwd: path.join(ROOT, "apps/web"), script: "dev" },
     ],
   },
@@ -277,7 +265,7 @@ export function createDevRunnerEnv({
       delete output.AGENTS_DESKTOP_WS_URL;
     }
 
-    if (mode === "dev:desktop" || mode === "dev:qt6") {
+    if (mode === "dev:desktop") {
       output.AGENTS_MODE = "desktop";
       output.AGENTS_MODE = "desktop";
       output.AGENTS_DESKTOP_WS_URL = wsUrl;

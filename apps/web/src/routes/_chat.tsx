@@ -1,8 +1,12 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Sidebar, SidebarProvider } from "~/components/ui/sidebar";
+import { Sidebar, SidebarProvider, SidebarRail } from "~/components/ui/sidebar";
 import { DiffWorkerPoolProvider } from "../components/DiffWorkerPoolProvider";
 import ThreadSidebar from "../components/Sidebar";
+
+const LEFT_PROJECTS_SIDEBAR_WIDTH_STORAGE_KEY = "chat_projects_sidebar_width";
+const LEFT_PROJECTS_SIDEBAR_MIN_WIDTH = 15 * 16;
+const LEFT_PROJECTS_SIDEBAR_MAX_WIDTH = 28 * 16;
 
 function ChatRouteLayout() {
   const navigate = useNavigate();
@@ -30,10 +34,16 @@ function ChatRouteLayout() {
     <SidebarProvider defaultOpen>
       <Sidebar
         side="left"
-        collapsible="offcanvas"
+        collapsible="icon"
         className="border-r border-border bg-card text-foreground"
+        resizable={{
+          maxWidth: LEFT_PROJECTS_SIDEBAR_MAX_WIDTH,
+          minWidth: LEFT_PROJECTS_SIDEBAR_MIN_WIDTH,
+          storageKey: LEFT_PROJECTS_SIDEBAR_WIDTH_STORAGE_KEY,
+        }}
       >
         <ThreadSidebar />
+        <SidebarRail />
       </Sidebar>
       <DiffWorkerPoolProvider>
         <Outlet />
